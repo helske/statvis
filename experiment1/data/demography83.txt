@@ -1,0 +1,1 @@
+{"age":"29","expertise":"Data Analysis","level":"Bachelor","experience":"8","tools":"Alteryx \nTableau\nSQL\nR"}

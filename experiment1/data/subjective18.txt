@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Feels more cut-throat than the others.","This too is very \"black-and-white\" since it doesn't show the slide the other two visuals have.",".",".","."],"rank":["4","3","1","2"]}

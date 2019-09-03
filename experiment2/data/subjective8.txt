@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["nice that it accommodates reading off several significance levels simultaneously","Easy to read off quickly","difficult to read which significance level a certain color corresponds to","boundaries of distribution take up too much visual space",""],"rank":["2","1","3","4"]}

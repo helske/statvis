@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["The p-value is irrelevant.","CI invites dichotomization of evidence.","Cat's eye reflects higher compatibility around the sample mean but invites overconfident claims about the true population mean.","Nice representation of uncertainty reflecting graded nature of evidence.",""],"rank":["4","3","2","1"]}

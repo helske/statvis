@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Forces the user to understand the numbers and form a mental image","Gives a false visual understanding of the spread","Uses two visual cues to understand distribution, but demand more understanding from the user. ","Fading helps to see significance of distribution","Nice test"],"rank":["2","1","4","3"]}

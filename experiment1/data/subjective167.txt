@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["All information is given","Might foster dichotomisation","Avoids dichotomisation.","Not aesthetically pleasing.","Would love to collaborate; your work intersects with my interests! Feel free to contact me on twitter @jacuzzijo"],"rank":["2","4","1","3"]}

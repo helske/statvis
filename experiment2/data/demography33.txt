@@ -1,0 +1,1 @@
+{"previous":"No","age":"34","expertise":"Sport psychology","level":"PhD","experience":"1","tools":"SPSS, JASP, jamovi, Mplus"}

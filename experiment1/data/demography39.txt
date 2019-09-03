@@ -1,0 +1,1 @@
+{"age":"40","expertise":"Visualization","level":"PhD","experience":"9 years","tools":"Tableau, Excel, Google spreadsheet, R, Python"}

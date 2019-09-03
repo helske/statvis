@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Bad for visualizing (naturally), but great in information.","Illustrative and easy to interpret","Colourful, with more information than nr. 3 above, but can still be deceiving","Colourful, but can be deceiving",""],"rank":["1","2","3","4"]}

@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["It's hard to determine at which level belongs each gradient","Too old school. It doesn't show beyond the 95%","Besides showing the gradient, the same information is shown as size, so it's more salient.","Simple and clean. ",""],"rank":["3","4","1","2"]}

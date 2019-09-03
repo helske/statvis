@@ -1,0 +1,1 @@
+{"age":"81","expertise":"educational psychology ","level":"PhD","experience":"53 years ","tools":"I work with younger statistician and they use latent class analysis, various displays of means and standard deviations of large scale international surveys. "}

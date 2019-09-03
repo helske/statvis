@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["takes too much time to read","Easy to forget about the fact that probabilities are not linear","hard to see limitations. Perhaps risk of interpreting it as a probability distribution?","does not really look like a gradient, almost a 2-tone coloring (green vs light green)",""],"rank":["4","2","1","3"]}

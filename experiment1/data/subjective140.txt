@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Gives good information","Not distracting","Too much information","No idea what's going on",""],"rank":["1","2","3","4"]}

@@ -1,0 +1,1 @@
+{"age":"22","expertise":"Psychology ","level":"Bachelor","experience":"1 month ","tools":"SPSS\nAMOS"}

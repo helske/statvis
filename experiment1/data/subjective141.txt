@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Hard to guess the effect of p-values.","Clear boundaries are good.","Emphasize on the mean value makes it easy to focus.","The unclear boundaries may make some hard guesses but the solid colors near the middle feel like a candle-stick. ",""],"rank":["4","3","2","1"]}

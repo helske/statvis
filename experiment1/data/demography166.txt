@@ -1,0 +1,1 @@
+{"age":"63","expertise":"operations reseach","level":"Master","experience":"31","tools":"excel, r, palisade decision tools, extendsim, analytic hierarchy process"}

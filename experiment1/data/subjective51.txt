@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["p-value gets too much influence, CI should be used in its own right","preferred","difficult to interpret - made me more confused","difficult to interpret - made me more confused","if possible share the results on young statistician europe when done"],"rank":["2","1","4","3"]}

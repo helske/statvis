@@ -1,0 +1,1 @@
+{"age":"39","expertise":"information science","level":"Master","experience":"14 years","tools":"R, MySQL, Hive, Python"}

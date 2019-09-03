@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Not visual","Uncluttered","represents the probabilities in the tails","Hard to estimate cumulative probabilities of the tails","asking about weight gain and presenting 2-tailed results may have added some complexity here"],"rank":["2","1","3","4"]}

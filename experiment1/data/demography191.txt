@@ -1,0 +1,1 @@
+{"age":"26","expertise":"cognitive neuroscience","level":"Bachelor","experience":"3,5 years","tools":"spss and r for behavioral data, now getting into matlab and phyton for neuroimaging data"}

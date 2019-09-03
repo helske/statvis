@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Difficult to visualize, but faster to read & understand.","Easy to understand & not cluttered.","There's too much going on here.","I like the color changing up to the 99.9% CI.",""],"rank":["3","2","3","1"]}

@@ -1,0 +1,1 @@
+{"age":"29","expertise":"Psychology","level":"Bachelor","experience":"2 years","tools":"RStudio (lme4, brms, tidyverse), Excel, occasionally Python (numpy & pandas)"}

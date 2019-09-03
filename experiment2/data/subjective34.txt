@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["Most information","Binary decisions (can be good or bad)","Color differences difficult to distinguish","Simple",""],"rank":["2","4","1","3"]}

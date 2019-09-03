@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["+ accurate\n- takes time to read","+ clear\n- ?","+ very clear and readable","+ relatively clear\n- shading is... uneasy to interpret",""],"rank":["4","4","3","4"]}

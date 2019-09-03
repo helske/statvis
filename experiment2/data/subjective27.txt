@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["Most visually pleasing, but the shape doesn't really convey much info","Would be preferable when many datapoints need to be shown","Not very clear where the CI is","Intuitive, but could be more difficult to interpret when showing many datapoints",""],"rank":["2","1","4","1"]}

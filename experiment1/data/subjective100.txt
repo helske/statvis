@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Easy to read and analyze. Straightforward","Quick analysis that gives a straightforward answer","Interesting but complicated for some to grasp by looking at it","Why not just use a boxplot",""],"rank":["1","2","4","3"]}

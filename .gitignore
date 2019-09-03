@@ -1,0 +1,7 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+experiment1/results/*.rds
+experiment2/results/*.rds
+

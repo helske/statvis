@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["reasonable","no distribution info.  don't like the end caps, which suggest an end to the interval","kind of ugly","i like these","In general, I didn't like having estimates of each group mean without having an estimate of the critical effect, the difference between the means."],"rank":["2","3","4","1"]}

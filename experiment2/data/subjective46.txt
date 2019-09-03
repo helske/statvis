@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["the level visualization is nice","I think the color helps to understand the graph better but this case left out the color","this was okay but the levels on the other graph are better","this is not the worst but I like the more circular graphs",""],"rank":["1","4","2","3"]}

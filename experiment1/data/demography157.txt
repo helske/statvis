@@ -1,0 +1,1 @@
+{"age":"42","expertise":"Psychometric","level":"PhD","experience":"10 years","tools":"SPSS\nJamovi\nJasp\nr"}

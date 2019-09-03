@@ -1,0 +1,1 @@
+{"age":"34","expertise":"Human-Computer Interaction","level":"PhD","experience":"6 years","tools":"SAS JMP\nVarious stats libraries in python"}

@@ -1,0 +1,1 @@
+{"labels":["violin2","ci","violin","gradient","comments"],"feedback":["violin really highlights the spread and the color adds marginal help","simple and intuitive","violin shape still useful w/o color","color distracts (psychologically speaking, in the hierarchy of visualization theory shape > color)",""],"rank":["1","3","2","4"]}

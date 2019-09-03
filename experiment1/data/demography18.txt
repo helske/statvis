@@ -1,0 +1,1 @@
+{"age":"34","expertise":"statistics/machine learning","level":"PhD","experience":"2,5 years","tools":"classification algorithms, mixed models, simulation models "}

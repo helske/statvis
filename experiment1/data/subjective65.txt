@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["No","No","It was more diffucult to see if lower CI is below zero","It was more diffucult to see if lower CI is below zero","Cool study! Nice layout und design!"],"rank":["2","1","4","3"]}

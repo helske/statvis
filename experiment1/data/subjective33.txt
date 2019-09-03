@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Terrible to compare results, requires more attention to interpret","Classic but the whiskers invite dichotomous interpretation","Shows more information than any of the other representations","Emphasizes the 99% interval which requires getting used to",""],"rank":["4","2","1","3"]}

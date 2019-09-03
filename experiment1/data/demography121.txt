@@ -1,0 +1,1 @@
+{"age":"35","expertise":"Data science","level":"Bachelor","experience":"1","tools":"R, Python"}

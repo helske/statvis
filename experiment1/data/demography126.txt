@@ -1,0 +1,1 @@
+{"age":"48","expertise":"interaction design and evaluation","level":"PhD","experience":"20 y","tools":"xlstat\nthe observer\nexcel\n"}

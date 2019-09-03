@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Limitation: no visualization for easy comparison of effects","Good for comparison of means, but shows just one CI (95% here)","Shows both mean and indication of several CI","Shows both mean and indication of several CI, violin version gives additional visual clue",""],"rank":["1","3","1","2"]}

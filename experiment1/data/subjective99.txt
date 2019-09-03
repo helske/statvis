@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Precise but harder to compare different conditions.","Precise and low visual clutter","visualization does not add much valuable information","adds little value compared to error bars",""],"rank":["4","1","3","2"]}

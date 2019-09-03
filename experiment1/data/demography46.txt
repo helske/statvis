@@ -1,0 +1,1 @@
+{"age":"42","expertise":"Neuroscience","level":"PhD","experience":"12 years","tools":"SPSS, R (along with JAMOVI), Excel"}

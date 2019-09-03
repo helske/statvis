@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Very detailed (of course), yet took the longest time to interpret","The best - clear and crisp. And recognizable.","Confusing regarding the width","Okay, but didn't feel that different from what I placed as nbr 1 (top-bottom indicators)",""],"rank":["2","1","4","3"]}

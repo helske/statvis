@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["difficult to compare the difference between two descriptions","hard to image the distribution outside the error bar","best in imaging how the data distributed outside the CI","good in imaging how the data distributed outside the CI",""],"rank":["4","3","1","2"]}

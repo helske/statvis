@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["easy to interpret","easy to read","visually appealing","don't like the contrast, difficult to see",""],"rank":["2","1","3","4"]}

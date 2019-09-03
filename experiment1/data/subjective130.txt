@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["I'm personally used to it,but its not intuitive ","I dont like it but Im used to it","I like it, easy to visualize","somehow this seems more difficult than it should",""],"rank":["2","3","1","4"]}

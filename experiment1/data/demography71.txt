@@ -1,0 +1,1 @@
+{"age":"53","expertise":"market research","level":"Master","experience":"20 years","tools":"JASP, SPSS, Excel"}

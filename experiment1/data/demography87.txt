@@ -1,0 +1,1 @@
+{"age":"31","expertise":"Statistics and psychology ","level":"Master","experience":"2 years","tools":"R"}

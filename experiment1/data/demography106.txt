@@ -1,0 +1,1 @@
+{"age":"24","expertise":"Political Science","level":"Bachelor","experience":"2 years","tools":"R"}

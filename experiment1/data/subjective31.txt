@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["a lot of information but dificult to grasp. One relies on only one aspect, either CI or p","very good for uderstanding actual CI, but very little information on overall behavior","benefit: easy to grasp","benefit: easy to grasp, but width is problematic",""],"rank":["4","3","1","2"]}

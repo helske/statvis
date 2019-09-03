@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["non intuitive, annoying to interpret","the classic is easiest to interpret for people used to it","looks good and transports additional info as compared to the above","looks awful",""],"rank":["4","2","1","3"]}

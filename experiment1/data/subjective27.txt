@@ -1,0 +1,1 @@
+{"labels":["pvalue","ci","violin","gradient","comments"],"feedback":["Harder to get all relevant information","Bad","okay","Better","The Boxes for the responses on this page are very bad, as I have to distinguish myself between benefits and limitations. Better use two boxes next time!"],"rank":["4","3","1","2"]}
