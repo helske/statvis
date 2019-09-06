@@ -311,6 +311,9 @@ fit8 <- brm(bf(
   cores = 2, refresh = 10)
 
 saveRDS(fit8, file="results/fit8.rds")
+
+# Perform cross-validation
+
 K <- 10
 folds <- loo::kfold_split_grouped(K = K, x = fit1$data$id)
 kfold1 <- kfold(fit1, folds = folds)

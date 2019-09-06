@@ -91,7 +91,7 @@ for(i in 1:n) {
   rankdata$rank[4*(i-1) + 1:4] <- factor(fb$rank)
   feedback[[i]] <- fb$feedback
 }
-rankdata$viz <- recode_factor(rankdata$viz, "violin2" = "Discrete Violin", "ci" = "CI", "gradient" = "Gradient", "violin" = "Continuous Violin")
+rankdata$viz <- recode_factor(rankdata$viz, "ci" = "CI", "gradient" = "Gradient", "violin" = "Continuous Violin",  "violin2" = "Discrete Violin")
 # make CI as reference class
 rankdata$viz <- relevel(rankdata$viz, "CI")
 

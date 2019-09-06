@@ -1,0 +1,272 @@
+body {
+    width:90%; /* responsive width */
+    height:100%;
+    margin: 25px auto; /*?*/
+    padding-left: 1em ;
+    padding-right: 1em ;
+    text-align: left;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+h1 {
+    padding-top: 0.3em ;
+    margin-bottom: 1em;
+    text-align: center;
+}
+
+li {
+  margin: 10px 0;
+}
+
+#startButton{
+    margin-top: 40px;
+}
+
+#consentButton{
+    height: 40px;
+    max-width: 100%; /* don't overflow horizontally if someone uses phone (hopefully not).. */
+    white-space: normal; /* wrap text in above case */
+
+}
+#buttonCondition1{
+    height: 40px;
+    max-width: 100%; /* don't overflow horizontally if someone uses phone (hopefully not).. */
+    white-space: normal; /* wrap text in above case */
+
+}
+#buttonCondition2{
+    height: 40px;
+    max-width: 100%; /* don't overflow horizontally if someone uses phone (hopefully not).. */
+    white-space: normal; /* wrap text in above case */
+
+}
+#buttonCondition3{
+    height: 40px;
+    max-width: 100%; /* don't overflow horizontally if someone uses phone (hopefully not).. */
+    white-space: normal; /* wrap text in above case */
+
+}
+#buttonCondition4{
+    height: 40px;
+    max-width: 100%; /* don't overflow horizontally if someone uses phone (hopefully not).. */
+    white-space: normal; /* wrap text in above case */
+
+}
+#demographicsButton{
+    height: 40px;
+    max-width: 100%; /* don't overflow horizontally if someone uses phone (hopefully not).. */
+    white-space: normal; /* wrap text in above case */
+
+}
+
+.Image{
+
+}
+
+h3{
+    text-align: center ;
+}
+
+textarea {
+    width: 200px;
+    height: 50px;
+    padding: 10px;
+}
+input[type=button]{
+    color: black;
+    -webkit-text-fill-color:black;
+}
+
+button{
+    height:30px;
+    width:20%;
+    text-align: center;
+    align-items: center;
+    color: black;
+    -webkit-text-fill-color:black;
+}
+
+form  { display: table;      }
+p{
+    display: table-row;
+}
+label{
+    display: table-cell;
+    padding: 10px;
+}
+input { display: table-cell; }
+
+.Image{
+    width: 100% ;
+    height: auto;
+}
+
+span.clear { clear: left; display: block; }
+
+/* not used?
+figure {
+    display: inline-block;
+    width:512px;
+}
+figure img {
+    vertical-align: center;
+}
+figure figcaption {
+    text-align: center;
+}
+*/
+
+#maindiv {
+    width: 100%;
+    margin: auto;
+}
+#imgdiv {
+    width:50%;
+    float: left;
+    /*padding-right: 1em ;*/
+}
+#slidersdiv {
+    float: right;
+    width: 49%;
+    /*margin-left: 5%;*/
+    align-items: center;
+    justify-content: center;
+}
+
+#finaldiv{
+    float:center;
+}
+
+.feedbackinfo{
+    padding:1em;
+    color: dimgrey ;
+}
+
+.slidecontainer {
+    width: 100% ;
+    padding-bottom: 4em;
+}
+
+/* The slider itself */
+.slider {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 55%; /* Full-width */
+    height: 15px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+    display:inline;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 5px; /* Set a specific slider handle width */
+    height: 30px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+
+.slider::-moz-range-thumb {
+    width: 5px; /* Set a specific slider handle width */
+    height: 30px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+}
+
+
+/*An other class to make the thumb of the slider invisible*/
+.slider2 {
+    -webkit-appearance: none;  /* Override default CSS styles */
+    appearance: none;
+    width: 55%; /* Full-width */
+    height: 15px; /* Specified height */
+    background: #d3d3d3; /* Grey background */
+    outline: none; /* Remove outline */
+    opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+    -webkit-transition: .2s; /* 0.2 seconds transition on hover */
+    transition: opacity .2s;
+    display:inline;
+}
+
+/* Mouse-over effects */
+.slider2:hover {
+    opacity: 1; /* Fully shown on mouse-over */
+}
+
+span{
+    display:inline;
+}
+
+
+/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+.slider2::-webkit-slider-thumb {
+    -webkit-appearance: none; /* Override default look */
+    appearance: none;
+    width: 5px; /* Set a specific slider handle width */
+    height: 30px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+    visibility: hidden;
+}
+
+.slider2::-moz-range-thumb {
+    width: 5px; /* Set a specific slider handle width */
+    height: 30px; /* Slider handle height */
+    background: #4CAF50; /* Green background */
+    cursor: pointer; /* Cursor on hover */
+    visibility: hidden;
+}
+
+.exampleImage {
+    width: 30%;
+    float: right;
+    height: auto;
+}
+.exampleText {
+    float: left;
+    width: 69%;
+    /*margin-left: 5%;*/
+    align-items: center;
+    justify-content: left;
+}
+
+.reminderImage{
+    width:55%;
+}
+
+.feedback{
+    margin-bottom: 20px;
+    margin-top: 20px;
+}
+
+td:first-child { width: 23% ;}
+
+
+
+@media
+(-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+    /*body{
+    width:1050px;
+    height:800px;
+    margin: 20px auto;
+    text-align: left;
+    }*/
+
+    /*.Image{
+        width: 512px ;
+        height: 384px;
+    }*/
