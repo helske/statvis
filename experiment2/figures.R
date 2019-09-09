@@ -39,7 +39,8 @@ p1 <- f_df_mu %>%
     axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
     legend.text=element_text(size = 10), strip.text.x = element_text(size = 10)) + 
   geom_rect(xmin=qlogis(0.04), xmax=qlogis(0.06), ymin=qlogis(0.25), ymax=qlogis(0.72), 
-            color = "black", alpha=0, linetype="solid")
+            color = "grey70", alpha=0, linetype="dashed")
+
 
 
 p2 <- f_df_mu %>% filter(p > 0.02 & p < 0.09) %>%
