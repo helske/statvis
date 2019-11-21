@@ -18,7 +18,6 @@ f_df_mu <- data.frame(
   f_mu)
 
 
-
 x_ticks <- c(0.001, 0.01, 0.04, 0.05, 0.06, 0.1, 0.5, 0.8)
 y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
 
@@ -54,10 +53,10 @@ p2 <- f_df_mu %>% filter(p > 0.02 & p < 0.09) %>%
     position = position_dodge(0.025)) + 
   ylab("Confidence") + xlab("p-value") + 
   theme_bw() + 
-  scale_y_continuous(trans="logit", breaks = y_ticks2,# position = "right",
-                     minor_breaks = NULL, labels = y_ticks2) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,# position = "right",
+                     minor_breaks = NULL, labels = y_ticks) + 
   scale_x_continuous(trans="logit",#position = "top",
-                     breaks = x_ticks2, labels = x_ticks2, 
+                     breaks = x_ticks, labels = x_ticks, 
                      minor_breaks = NULL) + 
   theme(axis.text.x = element_text(size = 10), legend.position = "none",  
         axis.title.x = element_text(size = 12),
