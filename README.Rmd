@@ -12,6 +12,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE, width = 150)
 ```
 
+# *NB: This anonymised page does not render Markdown properly, but Github will.*
+
 # What is this
 
 This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by XX. The original raw R scripts and results (expect the files with model fits which are too large to include) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
@@ -712,9 +714,9 @@ fit_rank21 <- add_criterion(fit_rank21, "loo")
 
 loo_compare(fit_rank11, fit_rank21)
 ```
-Expertise doesn't really add much, so we use the simpler model:
+Expertise doesn't add much, so we use the simpler model:
 ```{r rank_exp1_results}
-fit_rank1 <- fit_rank11
+fit_rank1 <- fit_rank21
 fit_rank1
 ```
 
@@ -1230,9 +1232,9 @@ fit_rank22 <- add_criterion(fit_rank22, "loo")
 loo_compare(fit_rank21, fit_rank22)
 ```
 
-Again, expertise doesn't really add much, so use simpler model:
+Again, we use simpler model:
 ```{r rankmodel_exp2_results}
-fit_rank2 <- fit_rank21
+fit_rank2 <- fit_rank22
 fit_rank2
 ```
 
