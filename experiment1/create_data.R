@@ -143,7 +143,7 @@ data %>%
   geom_point() +
   facet_wrap(~ viz)
 
-data <- data %>% filter(!(interaction(id,viz) %in% interaction(outliers$id, outliers$viz)))
+#data <- data %>% filter(!(interaction(id,viz) %in% interaction(outliers$id, outliers$viz)))
 
 # for monotonic but non-linear effect on confidence
 data$true_p <- factor(data$p)

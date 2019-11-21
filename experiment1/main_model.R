@@ -344,3 +344,15 @@ k8 <- readRDS("results/kfold8.rds")
 loo::compare(k1,k2,k3,k4,k5,k6,k7,k8)
 
 #differences between models 4, 5, 7, and 8 are pretty small (within SE). choose simplest (model 5)
+#with full data:
+load(file="kfolds_full_data.rds")
+loo::compare(kfold1,kfold2,kfold3,kfold4,kfold5,kfold6,kfold7,kfold8)
+#       elpd_diff  Wse_diff elpd_kfold p_kfold
+# kfold3     0.0       0.0 -7572.6         NA
+# kfold1    -3.2      10.8 -7575.7         NA
+# kfold2    -3.7       3.2 -7576.2         NA
+# kfold8   -74.5      10.4 -7647.1         NA
+# kfold6   -87.8       8.0 -7660.3         NA
+# kfold7   -92.2      12.0 -7664.7         NA
+# kfold4   -94.6       7.9 -7667.2         NA
+# kfold5   -99.9      12.1 -7672.5         NA
