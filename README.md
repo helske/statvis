@@ -10,6 +10,8 @@ output:
 
 
 
+# *NB: This anonymised page does not render Markdown properly, but Github will.*
+
 # What is this
 
 This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by XX. The original raw R scripts and results (expect the files with model fits which are too large to include) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
@@ -1095,17 +1097,17 @@ loo_compare(fit_rank11, fit_rank21)
 ## fit_rank21  0.0       0.0   
 ## fit_rank11 -6.2       2.5
 ```
-Expertise doesn't really add much, so we use the simpler model:
+Expertise doesn't add much, so we use the simpler model:
 
 ```r
-fit_rank1 <- fit_rank11
+fit_rank1 <- fit_rank21
 fit_rank1
 ```
 
 ```
 ##  Family: cumulative 
 ##   Links: mu = logit; disc = identity 
-## Formula: rank ~ viz * expertise + (1 | id) 
+## Formula: rank ~ viz + (1 | id) 
 ##    Data: ranks_exp1 (Number of observations: 428) 
 ## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
 ##          total post-warmup samples = 4000
@@ -1113,39 +1115,16 @@ fit_rank1
 ## Group-Level Effects: 
 ## ~id (Number of levels: 107) 
 ##               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sd(Intercept)     0.08      0.06     0.00     0.23 1.00     3446     2247
+## sd(Intercept)     0.08      0.06     0.00     0.22 1.00     4112     2352
 ## 
 ## Population-Level Effects: 
-##                               Estimate Est.Error l-95% CI u-95% CI Rhat
-## Intercept[1]                     -1.71      0.26    -2.23    -1.21 1.00
-## Intercept[2]                     -0.54      0.25    -1.03    -0.06 1.00
-## Intercept[3]                      0.71      0.25     0.21     1.20 1.00
-## vizCI                            -0.82      0.33    -1.46    -0.19 1.00
-## vizgradient                      -0.19      0.34    -0.88     0.48 1.00
-## vizviolin                        -1.08      0.36    -1.78    -0.36 1.00
-## expertiseStatsDML                 0.24      0.50    -0.74     1.23 1.00
-## expertiseVISDHCI                  0.87      0.46    -0.02     1.81 1.00
-## vizCI:expertiseStatsDML          -0.51      0.68    -1.88     0.84 1.00
-## vizgradient:expertiseStatsDML    -0.38      0.68    -1.74     0.96 1.00
-## vizviolin:expertiseStatsDML      -0.17      0.68    -1.58     1.14 1.00
-## vizCI:expertiseVISDHCI           -1.11      0.60    -2.33     0.06 1.00
-## vizgradient:expertiseVISDHCI     -1.09      0.60    -2.28     0.10 1.00
-## vizviolin:expertiseVISDHCI       -0.88      0.63    -2.12     0.34 1.00
-##                               Bulk_ESS Tail_ESS
-## Intercept[1]                      2125     3062
-## Intercept[2]                      2337     3195
-## Intercept[3]                      2310     3218
-## vizCI                             2615     3082
-## vizgradient                       2725     2746
-## vizviolin                         2837     3256
-## expertiseStatsDML                 2468     2664
-## expertiseVISDHCI                  2049     2635
-## vizCI:expertiseStatsDML           2849     2885
-## vizgradient:expertiseStatsDML     2906     2906
-## vizviolin:expertiseStatsDML       2791     3108
-## vizCI:expertiseVISDHCI            2419     2505
-## vizgradient:expertiseVISDHCI      2520     2940
-## vizviolin:expertiseVISDHCI        2597     2885
+##              Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
+## Intercept[1]    -1.95      0.21    -2.37    -1.55 1.00     5870     2667
+## Intercept[2]    -0.79      0.19    -1.17    -0.41 1.00     5520     3286
+## Intercept[3]     0.44      0.19     0.06     0.82 1.00     5298     3320
+## vizCI           -1.19      0.25    -1.67    -0.70 1.00     5171     3123
+## vizgradient     -0.55      0.25    -1.04    -0.06 1.00     5512     3497
+## vizviolin       -1.31      0.26    -1.83    -0.81 1.00     5456     3192
 ## 
 ## Samples were drawn using sampling(NUTS). For each parameter, Eff.Sample 
 ## is a crude measure of effective sample size, and Rhat is the potential 
@@ -2019,7 +1998,7 @@ fit_rank22 <- brm(rank ~ viz + (1 | id), family = cumulative,
 ## Start sampling
 ```
 
-Let's run approximate leave-one-out CV for these models:
+Let's run approximate leave-one-out CV for these models (due to warnings from `loo` we use option `reloo` in the first call which re-estimates the model multiple times leaving three problemtatic observations out of the data one at the time):
 
 ```r
 fit_rank21 <- add_criterion(fit_rank21, "loo", reloo = TRUE) # reloo due to warning
@@ -2063,17 +2042,17 @@ loo_compare(fit_rank21, fit_rank22)
 ## fit_rank21 -8.3      11.5
 ```
 
-Again, expertise doesn't really add much, so use simpler model:
+Again, we use simpler model:
 
 ```r
-fit_rank2 <- fit_rank21
+fit_rank2 <- fit_rank22
 fit_rank2
 ```
 
 ```
 ##  Family: cumulative 
 ##   Links: mu = logit; disc = identity 
-## Formula: rank ~ viz * expertise + (1 | id) 
+## Formula: rank ~ viz + (1 | id) 
 ##    Data: ranks_exp2 (Number of observations: 144) 
 ## Samples: 4 chains, each with iter = 2000; warmup = 1000; thin = 1;
 ##          total post-warmup samples = 4000
@@ -2081,39 +2060,23 @@ fit_rank2
 ## Group-Level Effects: 
 ## ~id (Number of levels: 36) 
 ##               Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS Tail_ESS
-## sd(Intercept)     0.14      0.11     0.00     0.41 1.00     2995     1973
+## sd(Intercept)     0.14      0.10     0.01     0.38 1.00     3139     2343
 ## 
 ## Population-Level Effects: 
-##                                       Estimate Est.Error l-95% CI u-95% CI
-## Intercept[1]                             -1.37      0.41    -2.17    -0.55
-## Intercept[2]                             -0.25      0.40    -1.04     0.54
-## Intercept[3]                              1.25      0.42     0.43     2.09
-## vizGradient                               0.07      0.56    -1.02     1.17
-## vizContinuousViolin                      -0.32      0.52    -1.36     0.73
-## vizDiscreteViolin                        -0.77      0.53    -1.85     0.26
-## expertiseStatsDML                        -2.98      1.42    -6.13    -0.60
-## expertiseVISDHCI                          3.56      1.36     1.31     6.55
-## vizGradient:expertiseStatsDML             5.40      2.01     1.88     9.78
-## vizContinuousViolin:expertiseStatsDML     4.26      1.67     1.25     7.79
-## vizDiscreteViolin:expertiseStatsDML       2.82      1.70    -0.33     6.35
-## vizGradient:expertiseVISDHCI             -3.89      1.56    -7.17    -1.17
-## vizContinuousViolin:expertiseVISDHCI     -3.90      1.55    -7.24    -1.24
-## vizDiscreteViolin:expertiseVISDHCI       -5.04      1.71    -8.73    -2.00
-##                                       Rhat Bulk_ESS Tail_ESS
-## Intercept[1]                          1.00     2770     2858
-## Intercept[2]                          1.00     2683     3142
-## Intercept[3]                          1.00     3011     3064
-## vizGradient                           1.00     3157     2983
-## vizContinuousViolin                   1.00     3133     3129
-## vizDiscreteViolin                     1.00     2845     3054
-## expertiseStatsDML                     1.00     1941     2014
-## expertiseVISDHCI                      1.00     1577     1726
-## vizGradient:expertiseStatsDML         1.00     2556     2644
-## vizContinuousViolin:expertiseStatsDML 1.00     2183     2015
-## vizDiscreteViolin:expertiseStatsDML   1.00     2182     2258
-## vizGradient:expertiseVISDHCI          1.00     1685     2004
-## vizContinuousViolin:expertiseVISDHCI  1.00     1698     1851
-## vizDiscreteViolin:expertiseVISDHCI    1.00     1770     2137
+##                     Estimate Est.Error l-95% CI u-95% CI Rhat Bulk_ESS
+## Intercept[1]           -1.45      0.36    -2.16    -0.73 1.00     3678
+## Intercept[2]           -0.43      0.35    -1.11     0.26 1.00     3968
+## Intercept[3]            0.87      0.35     0.18     1.55 1.00     4032
+## vizGradient            -0.06      0.46    -0.97     0.83 1.00     4184
+## vizContinuousViolin    -0.44      0.44    -1.29     0.43 1.00     4357
+## vizDiscreteViolin      -1.16      0.46    -2.05    -0.26 1.00     4121
+##                     Tail_ESS
+## Intercept[1]            2791
+## Intercept[2]            2912
+## Intercept[3]            2841
+## vizGradient             3409
+## vizContinuousViolin     2605
+## vizDiscreteViolin       3039
 ## 
 ## Samples were drawn using sampling(NUTS). For each parameter, Eff.Sample 
 ## is a crude measure of effective sample size, and Rhat is the potential 
