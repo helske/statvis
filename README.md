@@ -1,7 +1,7 @@
 ---
 title: "Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference"
-author: "Anonymised"
-date: "21/11/2019"
+author: "Jouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, Lonni Besançon"
+date: "24/01/2020"
 output: 
   html_document:
     keep_md: true
@@ -10,11 +10,10 @@ output:
 
 
 
-# *NB: This anonymised page does not render Markdown properly, but Github will.*
 
 # What is this
 
-This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by XX. The original raw R scripts and results (expect the files with model fits which are too large to include) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
+This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* byJouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, and Lonni Besançon. The original raw R scripts and results (except the files with model fits which are too large to include in GitHub) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
 
 
 ## One-sample experiment
@@ -961,10 +960,10 @@ p1 <- f_df_mu_exp1 %>%
 
 p2 <- f_df_mu_exp1 %>% filter(p > 0.02 & p < 0.09) %>%
   ggplot(aes(x = p, y = Estimate, colour = viz)) + 
-  geom_line(position = position_dodge(0.025)) +
+  geom_line(position = position_dodge(0.05)) +
   geom_linerange(
     aes(ymin = Q2.5, ymax = Q97.5), 
-    position = position_dodge(0.025)) + 
+    position = position_dodge(0.05)) + 
   ylab("Confidence") + xlab("p-value") + 
   theme_bw() + 
   scale_y_continuous(trans="logit", breaks = y_ticks,# position = "right",
@@ -1001,8 +1000,8 @@ y_ticks <- c(0.001, 0.01, seq(0.1,0.9,by=0.2))
 df_01_exp1 %>% 
   ggplot(aes(x = p, y = Estimate, colour = viz)) +
   geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
-                 position = position_dodge(width=0.15)) + 
-  geom_line(alpha=0.5, position = position_dodge(width=0.15))  + 
+                 position = position_dodge(width=0.19)) + 
+  geom_line(alpha=0.5, position = position_dodge(width=0.19))  + 
   ylab("Probability of all-or-none answer") + xlab("p-value") + 
   scale_fill_discrete("Representation", 
                       labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
@@ -1875,10 +1874,10 @@ p1 <- f_df_mu_exp2 %>%
 
 p2 <- f_df_mu_exp2 %>% filter(p > 0.02 & p < 0.09) %>%
   ggplot(aes(x = p, y = Estimate, colour = viz)) +
-  geom_line(position = position_dodge(0.025)) +
+  geom_line(position = position_dodge(0.05)) +
   geom_linerange(
     aes(ymin = Q2.5, ymax = Q97.5),
-    position = position_dodge(0.025)) +
+    position = position_dodge(0.05)) +
   ylab("Confidence") + xlab("p-value") +
   theme_bw() +
   scale_y_continuous(trans="logit", breaks = y_ticks,# position = "right",
@@ -1912,8 +1911,8 @@ y_ticks <- c(0.001, 0.01, seq(0.1,0.9,by=0.2))
 df_01_exp2 %>%
   ggplot(aes(x = p, y = Estimate, colour = viz)) +
   geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
-                 position = position_dodge(width=0.15)) +
-  geom_line(alpha=0.5, position = position_dodge(width=0.15))  +
+                 position = position_dodge(width=0.19)) +
+  geom_line(alpha=0.5, position = position_dodge(width=0.19))  +
   ylab("Probability of all-or-none answer") + xlab("p-value") +
   scale_fill_discrete("Representation",
                       labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
