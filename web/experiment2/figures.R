@@ -34,7 +34,7 @@ treatment_means <-  control_means + se * qt(1 - pvals/2, df = nu)
 
 ci_data <- data.frame(
   trial = rep(factor(1:reps), 2),
-  group = rep(c("control", "treatment"), each = reps),
+  Group = rep(c("Control", "Treatment"), each = reps),
   mean = c(control_means, treatment_means), 
   sigma = rep(c(sigma_x, sigma_y), each = reps),
   p = pvals, n = n, df = n - 1) %>% 
@@ -43,16 +43,23 @@ ci_data <- data.frame(
     lwr = mean - qt(1-(1-0.95)/2, df) * se,
     upr = mean + qt(1-(1-0.95)/2, df) * se)
 
-p <- ggplot(data=ci_data, aes(x=factor(p), y=mean, colour=group)) + 
+p <- ggplot(data=ci_data, aes(x=factor(p), y=mean, colour=Group)) + 
   geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.25, 
                 position = position_dodge(width=0.5)) + 
-  geom_point(position = position_dodge(width=0.5)) + xlab("P-value") + 
-  ylab("Weight decrease (kg)") + labs(colour = "Group") +
-  theme_bw() + theme(legend.position="bottom")
-p
-size <- 5
-p <- ggsave("experiment2/results/configuration2.pdf" ,width = 6, height = 3)
+  geom_point(position = position_dodge(width=0.5), size = 0.7, show.legend = FALSE) + 
+  xlab("p-value") + 
+  ylab("Weight decrease (kg)") + 
+  scale_color_brewer(type = "qual") +
+  theme_classic() + 
+  theme(axis.text.x = element_text(size = 12), 
+        axis.text.y = element_text(size = 12), 
+        legend.position = "bottom", legend.title = element_text(size = 14),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14),
+        legend.text=element_text(size = 14))
 
+p
+ggsave("configuration2.pdf", width = 6, height = 3)
 
 # Create confidence interval plots
 

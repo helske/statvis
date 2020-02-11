@@ -2,6 +2,7 @@ library(modelr)
 library(magrittr)
 library(dplyr)
 library(brms)
+library(ggthemes)
 
 fit_exp1 <- readRDS("experiment1/results/fit1.rds")
 fit_exp1
@@ -12,6 +13,21 @@ combinations_exp1 <- fit_exp1$data %>%
                               fit_exp1$data$p_eq0.05, fit_exp1$data$cat_p, 
                               fit_exp1$data$true_p)))
 
+dc <- combinations_exp1 %>%
+  filter(true_p == "0.04" | true_p == "0.06")
+f_mu_exp1 <- fitted(fit_exp1, newdata = dc, summary = FALSE)
+
+d <- data.frame(value = c(f_mu_exp1), 
+                p = rep(dc$true_p, each = nrow(f_mu_exp1)),
+                viz = rep(dc$viz, each = nrow(f_mu_exp1)),
+                iter = 1:nrow(f_mu_exp1))
+
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+            "2.5%" = quantile(difference, 0.025), 
+            "97.5" = quantile(difference, 0.975))
+
 f_mu_exp1 <- fitted(fit_exp1, newdata = combinations_exp1, re_formula = NA)
 f_zoi_exp1 <- fitted(fit_exp1, newdata = combinations_exp1, re_formula = NA, dpar = "zoi")
 
@@ -21,85 +37,121 @@ f_df_mu_exp1 <- data.frame(
   f_mu_exp1)
 
 
-x_ticks <- c(0.001, 0.01, 0.04, 0.05, 0.06, 0.1, 0.5, 0.8)
+x_ticks <- c(0.001, 0.01, 0.04, 0.06, 0.1, 0.5, 0.8)
 y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
 
+cols <- scales::brewer_pal(palette = "Set1")(5)
+
+dodge <- 0.19
 p1 <- f_df_mu_exp1 %>% 
   ggplot(aes(x = p, y = Estimate, colour = viz)) + 
-  geom_line(
-    position = position_dodge(0.19)) +
-  geom_linerange(
-    aes(ymin = Q2.5, ymax = Q97.5), 
-    position = position_dodge(0.19)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = f_df_mu_exp1 %>% filter(p < 0.03 | p > 0.07),
+                 aes(ymin = Q2.5, ymax = Q97.5), 
+                 position = position_dodge(dodge), size = 0.3,
+                 show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
   ylab("Confidence") + xlab("p-value") + 
-  scale_color_discrete("Representation", 
-                       labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
-  scale_fill_discrete("Representation", 
-                      labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
-  theme_bw() + 
+  scale_color_manual("Representation", 
+                     values = cols,
+                     labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
   scale_y_continuous(trans="logit", breaks = y_ticks, minor_breaks = NULL, labels = y_ticks) + 
   scale_x_continuous(trans="logit",
                      breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10), legend.position = "bottom",  
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))  + 
-  geom_rect(xmin=qlogis(0.04), xmax=qlogis(0.06), ymin=qlogis(0.25), ymax=qlogis(0.72), 
-            color = "grey70", alpha=0, linetype="dashed")
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+        legend.margin = margin(t = -0.1, b = 0, unit = "cm"),
+        legend.title = element_blank(),
+        axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+        axis.text.y = element_text(size = 12),
+        axis.title.x = element_text(size = 14, margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+        axis.title.y = element_text(size = 14, margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+        legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+            color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
+
 
 
 p2 <- f_df_mu_exp1 %>% filter(p > 0.02 & p < 0.09) %>%
   ggplot(aes(x = p, y = Estimate, colour = viz)) + 
-  geom_line(position = position_dodge(0.05)) +
+  geom_line(position = position_dodge(0.1), size = 0.1) +
   geom_linerange(
     aes(ymin = Q2.5, ymax = Q97.5), 
-    position = position_dodge(0.05)) + 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
   ylab("Confidence") + xlab("p-value") + 
-  theme_bw() + 
-  scale_y_continuous(trans="logit", breaks = y_ticks,# position = "right",
+  scale_color_manual("Representation", 
+                     values = cols,
+                     labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
                      minor_breaks = NULL, labels = y_ticks) + 
   scale_x_continuous(trans="logit",
-                     breaks = x_ticks, labels = x_ticks, 
+                     breaks = c(0.04, 0.05, 0.06), 
+                     labels = c(0.04, 0.05, 0.06), 
                      minor_breaks = NULL) + 
-  theme(axis.text.x = element_text(size = 10), legend.position = "none",  
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        strip.text.x = element_text(size = 10),
-        plot.background = element_blank()) 
+  theme_classic() + 
+  theme(legend.position = "none",  
+        axis.title.x = element_blank(), axis.title.y = element_blank(),
+        plot.background = element_blank(),
+        plot.margin=unit(c(-4,-9,0,0), "mm"),
+        axis.text.x = element_text(size = 12), 
+        axis.text.y = element_text(size = 12)) 
 
-p <- p1 + annotation_custom(
-  ggplotGrob(p2), 
-  xmin = qlogis(0.15), xmax = qlogis(0.86), ymin = qlogis(0.2), ymax = qlogis(0.94))
+p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) + 
+  annotation_custom(
+    ggplotGrob(p2), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 
-ggsave(plot = p, filename = "curves1.pdf", width = 8.5, height = 5, unit = "cm")
+
+ggsave(p, filename = "exp1_confidence.pdf", 
+       width = 2*8.5, height = 12, 
+       unit = "cm", device = "pdf")
+p
+dev.off()
 
 df_01_exp1 <- data.frame(
   p = plogis(combinations_exp1$logit_p), 
   viz = combinations_exp1$viz, 
   f_zoi_exp1)
 
-y_ticks <- c(0.001, 0.01, seq(0.1,0.9,by=0.2))
+y_ticks <- c(0, 0.01, seq(0.1,0.9,by=0.2))
 
 p <- df_01_exp1 %>% 
   ggplot(aes(x = p, y = Estimate, colour = viz)) +
-  geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
-                 position = position_dodge(width=0.15)) + 
-  geom_line(alpha=0.5, position = position_dodge(width=0.15))  + 
+  geom_line(position = position_dodge(0.19), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.19), size = 0.1,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.19), size = 0.5) +
   ylab("Probability of all-or-none answer") + xlab("p-value") + 
   scale_fill_discrete("Representation", 
                       labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
   scale_colour_discrete("Representation", 
                         labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
   theme_bw() + 
-  scale_y_continuous(trans = "logit",
-                     breaks = y_ticks, labels = y_ticks, minor_breaks = NULL) + 
+  # scale_y_continuous(#trans = "logit",
+  #                     breaks = y_ticks, labels = y_ticks, minor_breaks = NULL) + 
   scale_x_continuous(trans = "logit",
                      breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10), legend.position = "bottom",   
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10)) 
-ggsave(plot = p, filename = "011.pdf", width = 17.5, height = 10, unit = "cm")
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+        legend.margin = margin(t = -0.1, b = 0, unit = "cm"),
+        legend.title = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 10), 
+        axis.title.x = element_text(size = 12, margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+        axis.title.y = element_text(size = 12, margin = margin(t = 0, r = 0, b = 0, l = -0.1, unit = "cm")),
+        axis.text.y = element_text(size = 10),
+        legend.text = element_text(size = 12), strip.text.x = element_text(size = 10))
+
+
+ggsave(p, filename = "exp1_extreme.pdf", 
+       width = 2*8.5, height = 12, 
+       unit = "cm", device = "pdf")
+p
+dev.off()
 
 
 ###

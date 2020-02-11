@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE, width = 150)
 
 # What is this
 
-This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* byJouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, and Lonni Besançon. The original raw R scripts and results (except the files with model fits which are too large to include in GitHub) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
+This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, and Lonni Besançon. The original raw R scripts and results (except the files with model fits which are too large to include in GitHub) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
 
 
 ## One-sample experiment
@@ -187,10 +187,10 @@ Overall the removal of these 15 (or 78) cases does not have a major effect on th
 
 ### Descriptive statistics
 
-Let's look some descriptive statistics, first the cliff effect as difference between confidence when $p$-value=0.06 versus $p$-value=0.04:
+Let's look some descriptive statistics, first the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
 ```{r cliff_effect_exp1}
 data %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz) %>%
   summarise(
     mean = mean(difference), 
@@ -200,7 +200,7 @@ data %>% group_by(id, viz) %>%
     "97.5%" = quantile(difference, 0.975))
 
 data %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x = viz, y = difference)) + 
   geom_violin() +
   geom_point(alpha = 0.5, position = position_jitter(0.1)) +
@@ -214,7 +214,7 @@ The cliff effect seems to be largest when information is presented as traditiona
 Now same but with subgrouping using sample size:
 ```{r cliff_effect_n_exp1}
 data %>% group_by(id, viz, n) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, n) %>%
   summarise(
     mean = mean(diff), 
@@ -226,7 +226,7 @@ data %>% group_by(id, viz, n) %>%
 and expertise:
 ```{r cliff_effect_expertise_exp1}
 data %>% group_by(id, viz, expertise) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, expertise) %>%
   summarise(
     mean = mean(diff), 
@@ -240,9 +240,9 @@ In terms of sample size, there doesn't seem to be clear differences in cliff eff
 ```{r cliff_effect_n_exp1_plot}
 data %>% group_by(id, viz, expertise) %>% 
   summarize(
-    difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+    difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_bw() + 
-  scale_y_continuous("Difference in confidence when p-value is 0.06 vs 0.04") +
+  scale_y_continuous("Difference in confidence when p-value is 0.04 vs 0.06") +
   scale_x_discrete("Representation") +
   geom_point(aes(colour = expertise), position=position_jitter(0.1))
 ```
@@ -674,6 +674,25 @@ df_01_exp1 %>%
         legend.text=element_text(size = 10), strip.text.x = element_text(size = 10)) 
 ```
 
+Finally, we can compute the average drop in perceived confidence when moving from $p = 0.04$ to $p=0.06$:
+
+```{r drop1}
+dc <- combinations_exp1 %>%
+  filter(true_p == "0.04" | true_p == "0.06")
+f_mu_exp1 <- fitted(fit_exp1, newdata = dc, re_formula = NA, summary = FALSE)
+
+d <- data.frame(value = c(f_mu_exp1), 
+                p = rep(dc$true_p, each = nrow(f_mu_exp1)),
+                viz = rep(dc$viz, each = nrow(f_mu_exp1)),
+                iter = 1:nrow(f_mu_exp1))
+
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+      "2.5%" = quantile(difference, 0.025), 
+      "97.5" = quantile(difference, 0.975))
+
+```
 
 ### Subjective rankings of the representation styles
 
@@ -814,10 +833,10 @@ data2 <- data_all #%>% filter(!(interaction(id,viz) %in% interaction(outliers$id
 
 ### Descriptive statistics
 
-As in first experiment, we first look at some descriptive statistics. First the cliff effect as difference between confidence when $p$-value=0.06 versus $p$-value=0.04:
+As in first experiment, we first look at some descriptive statistics. First the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
 ```{r cliff_effect_exp2}
 data2 %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz) %>%
   summarise(
     mean = mean(difference), 
@@ -827,7 +846,7 @@ data2 %>% group_by(id, viz) %>%
     "97.5%" = quantile(difference, 0.975))
 
 data2 %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x = viz, y = difference)) + 
   geom_violin() +
   geom_point(alpha = 0.5, position = position_jitter(0.1)) +
@@ -841,7 +860,7 @@ Interestingly, while the cliff effect is again largest with classic CI, there ar
 Now same but with subgrouping using sample size:
 ```{r cliff_effect_n_exp2}
 data2 %>% group_by(id, viz, n) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, n) %>%
   summarise(
     mean = mean(diff), 
@@ -853,7 +872,7 @@ data2 %>% group_by(id, viz, n) %>%
 and expertise:
 ```{r cliff_effect_expertise_exp2}
 data2 %>% group_by(id, viz, expertise) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, expertise) %>%
   summarise(
     mean = mean(diff), 
@@ -864,9 +883,9 @@ data2 %>% group_by(id, viz, expertise) %>%
 
 data2 %>% group_by(id, viz,expertise) %>% 
   summarize(
-    difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+    difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_bw() + 
-  scale_y_continuous("Difference in confidence when p-value is 0.06 vs 0.04") +
+  scale_y_continuous("Difference in confidence when p-value is 0.04 vs 0.06") +
   scale_x_discrete("Representation") +
   geom_point(aes(colour = expertise), position=position_jitter(0.1))
 ```
@@ -1183,6 +1202,28 @@ df_01_exp2 %>%
         axis.title.x = element_text(size = 12),
         axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
         legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))
+```
+
+
+Again we can compute the average drop in perceived confidence when moving from $p = 0.04$ to $p=0.06$:
+
+```{r drop2}
+dc <- combinations_exp2 %>%
+  filter(true_p == "0.04" | true_p == "0.06")
+f_mu_exp2 <- fitted(fit_exp2, newdata = dc, 
+                    re_formula = NA, summary = FALSE)
+
+d <- data.frame(value = c(f_mu_exp2), 
+                p = rep(dc$true_p, each = nrow(f_mu_exp2)),
+                viz = rep(dc$viz, each = nrow(f_mu_exp2)),
+                iter = 1:nrow(f_mu_exp2))
+
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+      "2.5%" = quantile(difference, 0.025), 
+      "97.5" = quantile(difference, 0.975))
+
 ```
 
 There is a peculiar rise in confidence level in case of continuous Violin CI when the underlying $p$-value is 0.05, but overall, compared to the first experiment the results here do not show strong differences in cliff effect or dichotomous thinking, and actually is no clear signs of these phenomena in this experiment.

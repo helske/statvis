@@ -189,11 +189,11 @@ Overall the removal of these 15 (or 78) cases does not have a major effect on th
 
 ### Descriptive statistics
 
-Let's look some descriptive statistics, first the cliff effect as difference between confidence when $p$-value=0.06 versus $p$-value=0.04:
+Let's look some descriptive statistics, first the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
 
 ```r
 data %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz) %>%
   summarise(
     mean = mean(difference), 
@@ -205,17 +205,17 @@ data %>% group_by(id, viz) %>%
 
 ```
 ## # A tibble: 4 x 6
-##   viz        mean    sd     se `2.5%` `97.5%`
-##   <fct>     <dbl> <dbl>  <dbl>  <dbl>   <dbl>
-## 1 p        -0.192 0.274 0.0257 -0.721  0.188 
-## 2 CI       -0.232 0.250 0.0235 -0.842  0.0525
-## 3 gradient -0.102 0.239 0.0225 -0.741  0.366 
-## 4 violin   -0.126 0.204 0.0192 -0.616  0.162
+##   viz       mean    sd     se  `2.5%` `97.5%`
+##   <fct>    <dbl> <dbl>  <dbl>   <dbl>   <dbl>
+## 1 p        0.192 0.274 0.0257 -0.188    0.721
+## 2 CI       0.232 0.250 0.0235 -0.0525   0.842
+## 3 gradient 0.102 0.239 0.0225 -0.366    0.741
+## 4 violin   0.126 0.204 0.0192 -0.162    0.616
 ```
 
 ```r
 data %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x = viz, y = difference)) + 
   geom_violin() +
   geom_point(alpha = 0.5, position = position_jitter(0.1)) +
@@ -232,7 +232,7 @@ Now same but with subgrouping using sample size:
 
 ```r
 data %>% group_by(id, viz, n) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, n) %>%
   summarise(
     mean = mean(diff), 
@@ -245,22 +245,22 @@ data %>% group_by(id, viz, n) %>%
 ```
 ## # A tibble: 8 x 7
 ## # Groups:   viz [4]
-##   viz      n        mean    sd     se `2.5%` `97.5%`
-##   <fct>    <fct>   <dbl> <dbl>  <dbl>  <dbl>   <dbl>
-## 1 p        50    -0.215  0.266 0.0359 -0.687  0.0535
-## 2 p        200   -0.169  0.280 0.0368 -0.777  0.218 
-## 3 CI       50    -0.207  0.187 0.0252 -0.638  0.0263
-## 4 CI       200   -0.254  0.297 0.0390 -0.905  0.101 
-## 5 gradient 50    -0.117  0.218 0.0294 -0.669  0.220 
-## 6 gradient 200   -0.0888 0.259 0.0340 -0.729  0.369 
-## 7 violin   50    -0.116  0.167 0.0225 -0.504  0.162 
-## 8 violin   200   -0.136  0.235 0.0308 -0.686  0.123
+##   viz      n       mean    sd     se  `2.5%` `97.5%`
+##   <fct>    <fct>  <dbl> <dbl>  <dbl>   <dbl>   <dbl>
+## 1 p        50    0.215  0.266 0.0359 -0.0535   0.687
+## 2 p        200   0.169  0.280 0.0368 -0.218    0.777
+## 3 CI       50    0.207  0.187 0.0252 -0.0263   0.638
+## 4 CI       200   0.254  0.297 0.0390 -0.101    0.905
+## 5 gradient 50    0.117  0.218 0.0294 -0.220    0.669
+## 6 gradient 200   0.0888 0.259 0.0340 -0.369    0.729
+## 7 violin   50    0.116  0.167 0.0225 -0.162    0.504
+## 8 violin   200   0.136  0.235 0.0308 -0.123    0.686
 ```
 and expertise:
 
 ```r
 data %>% group_by(id, viz, expertise) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, expertise) %>%
   summarise(
     mean = mean(diff), 
@@ -273,20 +273,20 @@ data %>% group_by(id, viz, expertise) %>%
 ```
 ## # A tibble: 12 x 7
 ## # Groups:   viz [4]
-##    viz      expertise    mean    sd     se `2.5%`  `97.5%`
-##    <fct>    <fct>       <dbl> <dbl>  <dbl>  <dbl>    <dbl>
-##  1 p        Other     -0.199  0.240 0.0307 -0.677  0.0859 
-##  2 p        Stats/ML  -0.237  0.298 0.0666 -0.835  0.0760 
-##  3 p        VIS/HCI   -0.149  0.318 0.0562 -0.735  0.558  
-##  4 CI       Other     -0.229  0.239 0.0306 -0.864  0.0354 
-##  5 CI       Stats/ML  -0.308  0.262 0.0585 -0.808 -0.00480
-##  6 CI       VIS/HCI   -0.189  0.259 0.0457 -0.744  0.199  
-##  7 gradient Other     -0.119  0.208 0.0266 -0.621  0.247  
-##  8 gradient Stats/ML  -0.148  0.189 0.0424 -0.597  0.0563 
-##  9 gradient VIS/HCI   -0.0417 0.310 0.0547 -0.802  0.532  
-## 10 violin   Other     -0.153  0.215 0.0275 -0.616  0.146  
-## 11 violin   Stats/ML  -0.174  0.230 0.0515 -0.714  0.0457 
-## 12 violin   VIS/HCI   -0.0442 0.136 0.0241 -0.322  0.189
+##    viz      expertise   mean    sd     se   `2.5%` `97.5%`
+##    <fct>    <fct>      <dbl> <dbl>  <dbl>    <dbl>   <dbl>
+##  1 p        Other     0.199  0.240 0.0307 -0.0859    0.677
+##  2 p        Stats/ML  0.237  0.298 0.0666 -0.0760    0.835
+##  3 p        VIS/HCI   0.149  0.318 0.0562 -0.558     0.735
+##  4 CI       Other     0.229  0.239 0.0306 -0.0354    0.864
+##  5 CI       Stats/ML  0.308  0.262 0.0585  0.00480   0.808
+##  6 CI       VIS/HCI   0.189  0.259 0.0457 -0.199     0.744
+##  7 gradient Other     0.119  0.208 0.0266 -0.247     0.621
+##  8 gradient Stats/ML  0.148  0.189 0.0424 -0.0563    0.597
+##  9 gradient VIS/HCI   0.0417 0.310 0.0547 -0.532     0.802
+## 10 violin   Other     0.153  0.215 0.0275 -0.146     0.616
+## 11 violin   Stats/ML  0.174  0.230 0.0515 -0.0457    0.714
+## 12 violin   VIS/HCI   0.0442 0.136 0.0241 -0.189     0.322
 ```
 
 In terms of sample size, there doesn't seem to be clear differences in cliff effect expect the variation in case of $p$-value seems to depend on the sample size. In terms of expertise, there seems to be some differences especially in terms of variability (most notably the Violin plot for VIS/HCI), but the differences are likely due to few very extreme cases:
@@ -294,9 +294,9 @@ In terms of sample size, there doesn't seem to be clear differences in cliff eff
 ```r
 data %>% group_by(id, viz, expertise) %>% 
   summarize(
-    difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+    difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_bw() + 
-  scale_y_continuous("Difference in confidence when p-value is 0.06 vs 0.04") +
+  scale_y_continuous("Difference in confidence when p-value is 0.04 vs 0.06") +
   scale_x_discrete("Representation") +
   geom_point(aes(colour = expertise), position=position_jitter(0.1))
 ```
@@ -1020,6 +1020,35 @@ df_01_exp1 %>%
 
 ![](README_files/figure-html/extreme_exp1_plot-1.png)<!-- -->
 
+Finally, we can compute the average drop in perceived confidence when moving from $p = 0.04$ to $p=0.06$:
+
+
+```r
+dc <- combinations_exp1 %>%
+  filter(true_p == "0.04" | true_p == "0.06")
+f_mu_exp1 <- fitted(fit_exp1, newdata = dc, re_formula = NA, summary = FALSE)
+
+d <- data.frame(value = c(f_mu_exp1), 
+                p = rep(dc$true_p, each = nrow(f_mu_exp1)),
+                viz = rep(dc$viz, each = nrow(f_mu_exp1)),
+                iter = 1:nrow(f_mu_exp1))
+
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+      "2.5%" = quantile(difference, 0.025), 
+      "97.5" = quantile(difference, 0.975))
+```
+
+```
+## # A tibble: 4 x 5
+##   viz       mean     sd `2.5%` `97.5`
+##   <fct>    <dbl>  <dbl>  <dbl>  <dbl>
+## 1 p        0.263 0.0272 0.209   0.316
+## 2 CI       0.305 0.0268 0.253   0.358
+## 3 gradient 0.142 0.0281 0.0852  0.196
+## 4 violin   0.160 0.0272 0.105   0.213
+```
 
 ### Subjective rankings of the representation styles
 
@@ -1227,11 +1256,11 @@ data2 <- data_all #%>% filter(!(interaction(id,viz) %in% interaction(outliers$id
 
 ### Descriptive statistics
 
-As in first experiment, we first look at some descriptive statistics. First the cliff effect as difference between confidence when $p$-value=0.06 versus $p$-value=0.04:
+As in first experiment, we first look at some descriptive statistics. First the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
 
 ```r
 data2 %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz) %>%
   summarise(
     mean = mean(difference), 
@@ -1243,17 +1272,17 @@ data2 %>% group_by(id, viz) %>%
 
 ```
 ## # A tibble: 4 x 6
-##   viz                  mean     sd     se `2.5%` `97.5%`
-##   <fct>               <dbl>  <dbl>  <dbl>  <dbl>   <dbl>
-## 1 CI                -0.0681 0.122  0.0195 -0.278   0.216
-## 2 Gradient          -0.0192 0.129  0.0206 -0.276   0.205
-## 3 Continuous Violin -0.0130 0.0832 0.0133 -0.172   0.153
-## 4 Discrete Violin   -0.0531 0.181  0.0290 -0.493   0.188
+##   viz                 mean     sd     se `2.5%` `97.5%`
+##   <fct>              <dbl>  <dbl>  <dbl>  <dbl>   <dbl>
+## 1 CI                0.0681 0.122  0.0195 -0.216   0.278
+## 2 Gradient          0.0192 0.129  0.0206 -0.205   0.276
+## 3 Continuous Violin 0.0130 0.0832 0.0133 -0.153   0.172
+## 4 Discrete Violin   0.0531 0.181  0.0290 -0.188   0.493
 ```
 
 ```r
 data2 %>% group_by(id, viz) %>% 
-  summarize(difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x = viz, y = difference)) + 
   geom_violin() +
   geom_point(alpha = 0.5, position = position_jitter(0.1)) +
@@ -1270,7 +1299,7 @@ Now same but with subgrouping using sample size:
 
 ```r
 data2 %>% group_by(id, viz, n) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, n) %>%
   summarise(
     mean = mean(diff), 
@@ -1283,22 +1312,22 @@ data2 %>% group_by(id, viz, n) %>%
 ```
 ## # A tibble: 8 x 7
 ## # Groups:   viz [4]
-##   viz               n         mean     sd     se `2.5%` `97.5%`
-##   <fct>             <fct>    <dbl>  <dbl>  <dbl>  <dbl>   <dbl>
-## 1 CI                50    -0.0712  0.108  0.0249 -0.320  0.0460
-## 2 CI                200   -0.0652  0.136  0.0305 -0.239  0.255 
-## 3 Gradient          50    -0.0213  0.128  0.0294 -0.218  0.212 
-## 4 Gradient          200   -0.0172  0.133  0.0297 -0.290  0.183 
-## 5 Continuous Violin 50    -0.00213 0.0702 0.0161 -0.140  0.112 
-## 6 Continuous Violin 200   -0.0232  0.0946 0.0212 -0.158  0.162 
-## 7 Discrete Violin   50    -0.0803  0.185  0.0425 -0.560  0.141 
-## 8 Discrete Violin   200   -0.0273  0.177  0.0396 -0.437  0.236
+##   viz               n        mean     sd     se  `2.5%` `97.5%`
+##   <fct>             <fct>   <dbl>  <dbl>  <dbl>   <dbl>   <dbl>
+## 1 CI                50    0.0712  0.108  0.0249 -0.0460   0.320
+## 2 CI                200   0.0652  0.136  0.0305 -0.255    0.239
+## 3 Gradient          50    0.0213  0.128  0.0294 -0.212    0.218
+## 4 Gradient          200   0.0172  0.133  0.0297 -0.183    0.290
+## 5 Continuous Violin 50    0.00213 0.0702 0.0161 -0.112    0.140
+## 6 Continuous Violin 200   0.0232  0.0946 0.0212 -0.162    0.158
+## 7 Discrete Violin   50    0.0803  0.185  0.0425 -0.141    0.560
+## 8 Discrete Violin   200   0.0273  0.177  0.0396 -0.236    0.437
 ```
 and expertise:
 
 ```r
 data2 %>% group_by(id, viz, expertise) %>% 
-  summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
+  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, expertise) %>%
   summarise(
     mean = mean(diff), 
@@ -1311,28 +1340,28 @@ data2 %>% group_by(id, viz, expertise) %>%
 ```
 ## # A tibble: 12 x 7
 ## # Groups:   viz [4]
-##    viz               expertise     mean     sd     se  `2.5%`  `97.5%`
-##    <fct>             <fct>        <dbl>  <dbl>  <dbl>   <dbl>    <dbl>
-##  1 CI                Other     -0.0677  0.126  0.0243 -0.312   0.135  
-##  2 CI                Stats/ML  -0.101   0.0944 0.0472 -0.198   0.00480
-##  3 CI                VIS/HCI   -0.0530  0.130  0.0460 -0.182   0.179  
-##  4 Gradient          Other     -0.0239  0.127  0.0245 -0.294   0.193  
-##  5 Gradient          Stats/ML  -0.0227  0.123  0.0616 -0.0909  0.144  
-##  6 Gradient          VIS/HCI   -0.00126 0.152  0.0538 -0.223   0.193  
-##  7 Continuous Violin Other     -0.00860 0.0704 0.0135 -0.125   0.108  
-##  8 Continuous Violin Stats/ML  -0.0530  0.0537 0.0268 -0.124  -0.0116 
-##  9 Continuous Violin VIS/HCI   -0.00758 0.130  0.0460 -0.180   0.168  
-## 10 Discrete Violin   Other     -0.0419  0.138  0.0265 -0.409   0.162  
-## 11 Discrete Violin   Stats/ML  -0.00505 0.0847 0.0424 -0.0591  0.109  
-## 12 Discrete Violin   VIS/HCI   -0.115   0.313  0.111  -0.618   0.274
+##    viz               expertise    mean     sd     se   `2.5%` `97.5%`
+##    <fct>             <fct>       <dbl>  <dbl>  <dbl>    <dbl>   <dbl>
+##  1 CI                Other     0.0677  0.126  0.0243 -0.135    0.312 
+##  2 CI                Stats/ML  0.101   0.0944 0.0472 -0.00480  0.198 
+##  3 CI                VIS/HCI   0.0530  0.130  0.0460 -0.179    0.182 
+##  4 Gradient          Other     0.0239  0.127  0.0245 -0.193    0.294 
+##  5 Gradient          Stats/ML  0.0227  0.123  0.0616 -0.144    0.0909
+##  6 Gradient          VIS/HCI   0.00126 0.152  0.0538 -0.193    0.223 
+##  7 Continuous Violin Other     0.00860 0.0704 0.0135 -0.108    0.125 
+##  8 Continuous Violin Stats/ML  0.0530  0.0537 0.0268  0.0116   0.124 
+##  9 Continuous Violin VIS/HCI   0.00758 0.130  0.0460 -0.168    0.180 
+## 10 Discrete Violin   Other     0.0419  0.138  0.0265 -0.162    0.409 
+## 11 Discrete Violin   Stats/ML  0.00505 0.0847 0.0424 -0.109    0.0591
+## 12 Discrete Violin   VIS/HCI   0.115   0.313  0.111  -0.274    0.618
 ```
 
 ```r
 data2 %>% group_by(id, viz,expertise) %>% 
   summarize(
-    difference = confidence[true_p==0.06] - confidence[true_p==0.04]) %>%
+    difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
   ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_bw() + 
-  scale_y_continuous("Difference in confidence when p-value is 0.06 vs 0.04") +
+  scale_y_continuous("Difference in confidence when p-value is 0.04 vs 0.06") +
   scale_x_discrete("Representation") +
   geom_point(aes(colour = expertise), position=position_jitter(0.1))
 ```
@@ -1930,6 +1959,38 @@ df_01_exp2 %>%
 ```
 
 ![](README_files/figure-html/extreme_exp2_plot-1.png)<!-- -->
+
+
+Again we can compute the average drop in perceived confidence when moving from $p = 0.04$ to $p=0.06$:
+
+
+```r
+dc <- combinations_exp2 %>%
+  filter(true_p == "0.04" | true_p == "0.06")
+f_mu_exp2 <- fitted(fit_exp2, newdata = dc, 
+                    re_formula = NA, summary = FALSE)
+
+d <- data.frame(value = c(f_mu_exp2), 
+                p = rep(dc$true_p, each = nrow(f_mu_exp2)),
+                viz = rep(dc$viz, each = nrow(f_mu_exp2)),
+                iter = 1:nrow(f_mu_exp2))
+
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+      "2.5%" = quantile(difference, 0.025), 
+      "97.5" = quantile(difference, 0.975))
+```
+
+```
+## # A tibble: 4 x 5
+##   viz                  mean     sd   `2.5%` `97.5`
+##   <fct>               <dbl>  <dbl>    <dbl>  <dbl>
+## 1 CI                 0.0853 0.0333  0.0197  0.152 
+## 2 Gradient           0.0267 0.0336 -0.0378  0.0932
+## 3 Continuous Violin -0.0387 0.0334 -0.104   0.0258
+## 4 Discrete Violin    0.0747 0.0342  0.00689 0.141
+```
 
 There is a peculiar rise in confidence level in case of continuous Violin CI when the underlying $p$-value is 0.05, but overall, compared to the first experiment the results here do not show strong differences in cliff effect or dichotomous thinking, and actually is no clear signs of these phenomena in this experiment.
 
