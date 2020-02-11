@@ -25,12 +25,20 @@ ci_data <- data.frame(trial = factor(1:reps),
 p <- ggplot(data=ci_data, aes(x=factor(p), y=effect, colour=factor(n))) + 
   geom_errorbar(aes(ymin = lwr, ymax = upr), width = 0.25, 
                 position = position_dodge(width=0.5)) + 
-  geom_point(position = position_dodge(width=0.5)) + xlab("P-value") + 
+  geom_point(position = position_dodge(width=0.5), size = 0.7, show.legend = FALSE) + 
+  xlab("p-value") + 
   ylab("Weight increase (kg)") + labs(colour = "Sample size") +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey30") + 
-  theme_bw() + theme(legend.position="bottom")
+  scale_color_brewer(type = "qual") +
+  theme_classic() + 
+  theme(axis.text.x = element_text(size = 12), 
+        axis.text.y = element_text(size = 12), 
+        legend.position = "bottom", 
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14),
+        legend.text=element_text(size = 14), legend.title = element_text(size = 14))
 
-ggsave("experiment1/results/configuration.pdf" ,width = 6, height = 3)
+ggsave("configuration.pdf" ,width = 6, height = 3, device = "pdf")
 
 size <- 5
 # Create confidence interval plots
