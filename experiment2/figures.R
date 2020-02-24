@@ -61,7 +61,7 @@ p1 <- f_df_mu_exp2 %>%
                      breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
   theme_classic() + 
   theme(legend.position = "bottom", 
-        legend.margin = margin(t = -0.1, b = 0, unit = "cm"),
+        #legend.margin = margin(t = -0.1, b = 0, unit = "cm"),
         legend.title = element_blank(),
         axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
         axis.title.x = element_text(size = 14, margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
@@ -107,10 +107,9 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.035, 0.95)) +
 
 
 ggsave(p, filename = "exp2_confidence.pdf", 
-       width = 2*8.5, height = 12, 
+       width = 2*8.5, height = 12.5, 
        unit = "cm", device = "pdf")
-p
-dev.off()
+
 
 
 df_01 <- data.frame(
