@@ -1,6 +1,6 @@
 ---
 title: "Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference"
-author: "Jouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, Lonni Besançon"
+author: "Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, Lonni Besançon"
 date: "24/01/2020"
 output: 
   html_document:
@@ -13,7 +13,7 @@ output:
 
 # What is this
 
-This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* byJouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, and Lonni Besançon. The original raw R scripts and results (except the files with model fits which are too large to include in GitHub) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
+This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon. The original raw R scripts and results (except the files with model fits which are too large to include in GitHub) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here. See the [paper on Arvix](https://arxiv.org/abs/2002.07671). 
 
 
 ## One-sample experiment
