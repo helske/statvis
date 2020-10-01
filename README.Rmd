@@ -1,7 +1,7 @@
 ---
 title: "Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference"
-author: "Jouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, Lonni Besançon"
-date: "24/01/2020"
+author: "Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, Lonni Besançon"
+date: "22/09/2020"
 output: 
   html_document:
     keep_md: true
@@ -15,8 +15,7 @@ knitr::opts_chunk$set(echo = TRUE, width = 150)
 
 # What is this
 
-This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Matthew Cooper, Anders Ynnerman, Satu Helske, and Lonni Besançon. The original raw R scripts and results (except the files with model fits which are too large to include in GitHub) are in folders `experiment1` (one sample case) and `experiment2` (two sample case), but we will also reproduce the whole analysis workflow here.
-
+This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon. 
 
 ## One-sample experiment
 
@@ -29,15 +28,18 @@ suppressPackageStartupMessages({
   library(modelr)
   library(ggplot2)
   library(dplyr)
-  library(magrittr)
   library(jsonlite)
   library(loo)
+  library(ggthemes)
 })
+cols <- c("p-value" = "#D55E00", "CI" = "#0072B2", 
+  "Gradient CI" = "#009E73", "Violin CI" = "#CC79A7",
+  "Discrete Violin CI" = "#E69F00")
 ```
 
 Then we transform the raw data to suitable format for analysis:
 
-```{r create_data_exp1}
+```{r create_data_exp1, eval = FALSE}
 path <- "experiment1/data"
 answers <- list.files(path, pattern="answers", full.names = TRUE)
 
@@ -46,7 +48,7 @@ n <- length(answers)
 
 # create a data frame for the results
 data_raw <- data.frame(id = rep(1:n, each = 32), viz = NA, replication = NA, value = NA,
-                       expertise = NA, degree = NA)
+  expertise = NA, degree = NA, age = NA, experience = NA, tools = NA)
 
 # read in answers, not optimal way will do
 for(i in 1:n){
@@ -54,146 +56,133 @@ for(i in 1:n){
   dem <- fromJSON(paste0(path,  "/demography", x[[1]][1], ".txt"))
   for(j in 1:32) {
     data_raw[32*(i-1) + j, c("id", "viz", "replication", "value")] <- x[[j]]
-    data_raw[32*(i-1) + j, c("expertise", "degree")] <- dem[c("expertise", "level")]
+    data_raw[32*(i-1) + j, c("expertise", "degree", "age", "experience", "tools")] <- 
+      dem[c("expertise", "level", "age", "experience", "tools")]
   }
 }
 # remove person who didn't answer reasonably on the demography part
-# Degree is None and more imporantly expertise is 1..?
-data_all <- data_raw[data_raw$degree != "None",]
+# Degree is None and more importantly expertise is 1..?
+data <- data_raw[data_raw$degree != "None",]
 
 # true p-values
 true_p <- c(0.001, 0.01, 0.04, 0.05, 0.06, 0.1, 0.5, 0.8)
 
 # convert to factors and numeric
-data_all <- data_all %>% mutate(n = factor(ifelse(as.numeric(id) %% 8 < 4, 50, 200)),
-                                id = factor(id),
-                                viz = relevel(factor(viz, labels = c("CI", "gradient", "p", "violin")), "p"),
-                                replication = as.numeric(replication),
-                                value = as.numeric(value),
-                                p = true_p[replication],
-                                true_p = factor(p), # for monotonic but non-linear effect on confidence
-                                confidence = (value - 1) / 99,
-                                expertise = factor(expertise)) %>% arrange(id, viz)
+data <- data %>% mutate(n = factor(ifelse(as.numeric(id) %% 8 < 4, 50, 200)),
+  id = factor(id),
+  viz = relevel(factor(viz, labels = c("CI", "gradient", "p", "violin")), "p"),
+  replication = as.numeric(replication),
+  value = as.numeric(value),
+  p = true_p[replication],
+  true_p = factor(p), # for monotonic but non-linear effect on confidence
+  confidence = (value - 1) / 99,
+  expertise = factor(expertise)) %>% arrange(id, viz)
 
 
-# Try to classify participants into Stats/ML, VIS/HCI and Others
-data_all$expertise <- recode_factor(data_all$expertise, 
-                                    "Statistics" = "Stats/ML",
-                                    "statistics" = "Stats/ML",
-                                    "statistics/machine learning" = "Stats/ML",
-                                    "Analytics" = "Stats/ML",
-                                    "Statistics/Medicine" = "Stats/ML",
-                                    "Data science" = "Stats/ML",
-                                    "Biostatistics" = "Stats/ML",
-                                    "IT & Business Data Science" = "Stats/ML",
-                                    "methods" = "Stats/ML",
-                                    
-                                    "interaction design and evaluation" = "VIS/HCI",
-                                    "Human-Computer Interaction" = "VIS/HCI",
-                                    "HCI" = "VIS/HCI",
-                                    "Vis" = "VIS/HCI",
-                                    "Visualization" = "VIS/HCI",
-                                    "Data Visualization" = "VIS/HCI",
-                                    "CS, Visualization, HCI" = "VIS/HCI",
-                                    "Infovis" = "VIS/HCI",
-                                    "Visualization / Computer Science" = "VIS/HCI",
-                                    "AI" = "Stats/ML",
-                                    "Virtual Reality" = "VIS/HCI",
-                                    "Visualisation" = "VIS/HCI",
-                                    "Neuroscience and Statistics" = "Stats/ML",
-                                    "research in HCI" = "VIS/HCI",
-                                    
-                                    "Social science" = "Other",
-                                    "Political science" = "Other",
-                                    "sociology" = "Other",
-                                    "Sociology" = "Other",
-                                    "Analytical Sociology" = "Other",
-                                    "Education research" = "Other",
-                                    "Economics" = "Other", 
-                                    "market research" = "Other",
-                                    "Politics" = "Other",
-                                    "Finance" = "Other",
-                                    "Linguistics" = "Other",
-                                    "Education Poliy" = "Other",
-                                    "Political Science" = "Other",
-                                    "Psychology" =  "Other",
-                                    "psychology" =  "Other",
-                                    "Animal science" = "Other",
-                                    "Biology" = "Other",
-                                    "Botany" = "Other",
-                                    "ecology" = "Other",
-                                    "Zoology" = "Other",
-                                    "Physics" = "Other",
-                                    "cognitive neuroscience" = "Other",
-                                    "Neuroscience" = "Other",
-                                    "neuroscience/motor control" = "Other",
-                                    "Biomechanics" = "Other",
-                                    "Neurocognitive Psychology" = "Other",
-                                    "pharma" =  "Other",
-                                    "Public health" = "Other",
-                                    "neurobiology" = "Other",
-                                    "medicine" = "Other",
-                                    "Molcular Biology" = "Other",
-                                    "Wind Energy" = "Other",
-                                    "Mathematical Biology" = "Other",
-                                    "segregation" = "Other",
-                                    "Philosophy" = "Other",
-                                    "Pain" = "Other",
-                                    "genomics" = "Other",
-                                    "organizational science" = "Other",
-                                    "Psychometric" = "Other",
-                                    "Medicine" = "Other",
-                                    "Water engineering" = "Other",
-                                    "Strategic Management" = "Other",
-                                    "network analysis" = "Other",
-                                    "CSS" = "Other",
-                                    "Management"  = "Other",
-                                    "Computer science" = "Other",
-                                    "Computer Science" = "Other",
-                                    "HCI, Visualization" = "VIS/HCI",
-                                    "HCI/Visualization" = "VIS/HCI",
-                                    "Computer vision" = "Stats/ML")
-data_all$expertise <- relevel(data_all$expertise, "Other")
-
+# Try to classify expertise
+data$expertise <- recode_factor(data$expertise, 
+  
+  "Statistics" = "Stats/ML",
+  "statistics" = "Stats/ML",
+  "statistics/machine learning" = "Stats/ML",
+  "Analytics" = "Stats/ML",
+  "Statistics/Medicine" = "Stats/ML",
+  "Data science" = "Stats/ML",
+  "Biostatistics" = "Stats/ML",
+  "IT & Business Data Science" = "Stats/ML",
+  "methods" = "Stats/ML",
+  "AI" = "Stats/ML",
+  "Neuroscience and Statistics" = "Stats/ML",
+  "Computer vision" = "Stats/ML",
+  "Psychometric" = "Stats/ML",
+  
+  "HCI, Visualization" = "VIS/HCI",
+  "HCI/Visualization" = "VIS/HCI",
+  "interaction design and evaluation" = "VIS/HCI",
+  "Human-Computer Interaction" = "VIS/HCI",
+  "HCI" = "VIS/HCI",
+  "Vis" = "VIS/HCI",
+  "Visualization" = "VIS/HCI",
+  "Data Visualization" = "VIS/HCI",
+  "CS, Visualization, HCI" = "VIS/HCI",
+  "Infovis" = "VIS/HCI",
+  "Visualization / Computer Science" = "VIS/HCI",
+  "Virtual Reality" = "VIS/HCI",
+  "Visualisation" = "VIS/HCI",
+  "research in HCI" = "VIS/HCI",
+  "Computer science" = "VIS/HCI",
+  "Computer Science" = "VIS/HCI",
+  
+  "Social science" = "Social science and humanities",
+  "Political science" = "Social science and humanities",
+  "sociology" = "Social science and humanities",
+  "Sociology" = "Social science and humanities",
+  "Analytical Sociology" = "Social science and humanities",
+  "Education research" = "Social science and humanities",
+  "Economics" = "Social science and humanities", 
+  "market research" = "Social science and humanities",
+  "Politics" = "Social science and humanities",
+  "Finance" = "Social science and humanities",
+  "Linguistics" = "Social science and humanities",
+  "Education Poliy" = "Social science and humanities",
+  "Political Science" = "Social science and humanities",
+  "Psychology" =  "Social science and humanities",
+  "psychology" =  "Social science and humanities",
+  "segregation" = "Social science and humanities",
+  "Philosophy" = "Social science and humanities",
+  "organizational science" = "Social science and humanities",
+  "Strategic Management" = "Social science and humanities",
+  "network analysis" = "Social science and humanities",
+  "CSS" = "Social science and humanities",
+  "Management" = "Social science and humanities",
+  
+  "Animal science" = "Physical and life sciences",
+  "Biology" = "Physical and life sciences",
+  "Botany" = "Physical and life sciences",
+  "ecology" = "Physical and life sciences",
+  "Zoology" = "Physical and life sciences",
+  "Physics" = "Physical and life sciences",
+  "cognitive neuroscience" = "Physical and life sciences",
+  "Neuroscience" = "Physical and life sciences",
+  "neuroscience/motor control" = "Physical and life sciences",
+  "Biomechanics" = "Physical and life sciences",
+  "Neurocognitive Psychology" = "Physical and life sciences",
+  "pharma" =  "Physical and life sciences",
+  "Public health" = "Physical and life sciences",
+  "neurobiology" = "Physical and life sciences",
+  "medicine" = "Physical and life sciences",
+  "Molcular Biology" = "Physical and life sciences",
+  "Wind Energy" = "Physical and life sciences",
+  "Mathematical Biology" = "Physical and life sciences",
+  "Pain" = "Physical and life sciences",
+  "genomics" = "Physical and life sciences",
+  "Medicine" = "Physical and life sciences",
+  "Water engineering" = "Physical and life sciences")
+data$expertise <- relevel(data$expertise, "Stats/ML")
 ```
-
-We will then check for potential outliers, which we define as a person who had less confidence with $p = 0.001$ than with $p = 0.8$, i.e. the relationship between $p$-value and confidence has and opposite relationship compared to correct one:
-
-```{r potential_outliers_exp1}
-outliers <- data_all %>% group_by(id, viz) %>% 
-  summarize(
-    mistake = confidence[p == 0.001] < confidence[p == 0.8]) %>% 
-  filter(mistake)
-
-n_out <- nrow(outliers)
-
-data_all %>% 
-  filter((interaction(id,viz) %in% interaction(outliers$id, outliers$viz))) %>%
-  ggplot(aes(x = p, y = confidence, group = id, colour = id)) + 
-  geom_line() + 
-  geom_point() +
-  theme_bw() + 
-  facet_wrap(~ viz)
-
+```{r, cache = TRUE, echo = FALSE}
+data <- readRDS("experiment1/data/exp1_data.rds")
 ```
-
-In our previous versions of the analysis we used more strict criterion with $p \leq 0.01$ vs $p \geq 0.1$ which lead to the removal of 78 p-confidence curves. But as we did not preregister the exclusion criteria we do not exclude any cases from the subsequent analysis (Except the one participant who did not answer properly to demography questions). If would like to remove these `r n_out` cases from the further analysis, it could be accomplished by uncommenting the end of the following line:
-
-```{r filter_data_exp1}
-data <- data_all #%>% filter(!(interaction(id,viz) %in% interaction(outliers$id, outliers$viz)))
-```
-
-Overall the removal of these 15 (or 78) cases does not have a major effect on the results, and the overall conclusions of the analysis do not depend on whether we use the full or cleaned dataset.
 
 ### Descriptive statistics
 
-Let's look some descriptive statistics, first the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
-```{r cliff_effect_exp1}
+Let's fist look at some descriptive statistic:
+
+```{r, cache = TRUE}
+ids <- which(!duplicated(data$id))
+barplot(table(data$expertise[ids]))
+barplot(table(data$degree[ids]))
+hist(as.numeric(data$age[ids]))
+```
+
+Let us now focus on the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
+```{r cliff_effect_exp1, cache = TRUE}
 data %>% group_by(id, viz) %>% 
   summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz) %>%
   summarise(
     mean = mean(difference), 
+    median = median(difference),
     sd = sd(difference), 
     se = sd(difference) / sqrt(length(difference)),
     "2.5%" = quantile(difference, 0.025), 
@@ -206,49 +195,51 @@ data %>% group_by(id, viz) %>%
   geom_point(alpha = 0.5, position = position_jitter(0.1)) +
   scale_y_continuous("Difference in confidence when p-value is 0.06 vs 0.04") +
   scale_x_discrete("Representation") +
-  theme_bw() 
+  theme_classic() 
 ```
 
 The cliff effect seems to be largest when information is presented as traditional CI or $p$-value which behave similarly. Gradient CI and Violin CI plots are pretty close to each other.
 
 Now same but with subgrouping using sample size:
-```{r cliff_effect_n_exp1}
+```{r cliff_effect_n_exp1, cache = TRUE}
 data %>% group_by(id, viz, n) %>% 
-  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, n) %>%
   summarise(
-    mean = mean(diff), 
-    sd = sd(diff), 
-    se = sd(diff) / sqrt(length(diff)),
-    "2.5%" = quantile(diff, 0.025), 
-    "97.5%" = quantile(diff, 0.975))
+    mean = mean(difference), 
+    median = median(difference),
+    sd = sd(difference), 
+    se = sd(difference) / sqrt(length(difference)),
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5%" = quantile(difference, 0.975))
 ```
 and expertise:
-```{r cliff_effect_expertise_exp1}
+```{r cliff_effect_expertise_exp1, cache = TRUE}
 data %>% group_by(id, viz, expertise) %>% 
-  summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
+  summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, expertise) %>%
   summarise(
-    mean = mean(diff), 
-    sd = sd(diff), 
-    se = sd(diff) / sqrt(length(diff)),
-    "2.5%" = quantile(diff, 0.025), 
-    "97.5%" = quantile(diff, 0.975))
+    mean = mean(difference), 
+    median = median(difference),
+    sd = sd(difference), 
+    se = sd(difference) / sqrt(length(difference)),
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5%" = quantile(difference, 0.975))
 ```
 
 In terms of sample size, there doesn't seem to be clear differences in cliff effect expect the variation in case of $p$-value seems to depend on the sample size. In terms of expertise, there seems to be some differences especially in terms of variability (most notably the Violin plot for VIS/HCI), but the differences are likely due to few very extreme cases:
-```{r cliff_effect_n_exp1_plot}
+```{r cliff_effect_n_exp1_plot, cache = TRUE}
 data %>% group_by(id, viz, expertise) %>% 
   summarize(
     difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
-  ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_bw() + 
+  ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_classic() + 
   scale_y_continuous("Difference in confidence when p-value is 0.04 vs 0.06") +
   scale_x_discrete("Representation") +
   geom_point(aes(colour = expertise), position=position_jitter(0.1))
 ```
 
 Let's check how the much extreme answers (full or zero confidence) there are in different groups:
-```{r extreme_exp1}
+```{r extreme_exp1, cache = TRUE}
 data %>% group_by(id, viz, n) %>% 
   mutate(extreme = confidence %in% c(0, 1))  %>% 
   group_by(viz, n) %>%
@@ -271,7 +262,7 @@ Looks like the "Other" group is less prone to extreme values than other groups b
 ### Creating the model
 
 Now we create the necessary functions for our model:
-```{r create_model, eval = FALSE}
+```{r create_model, eval = TRUE, cache = TRUE}
 stan_funs <- "
  real logit_p_gaussian_lpdf(real y, real mu, real sigma,
                             real zoi, real coi) {
@@ -353,19 +344,20 @@ logit_p_gaussian <- custom_family(
 ```
 
 And create few additional variables:
-```{r additional_vars_exp1}
+```{r additional_vars_exp1, cache = TRUE}
 data <- data %>% 
   mutate(
     logit_p = qlogis(p),
     p_lt0.05 = factor(p < 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
     p_eq0.05 = factor(p == 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
-    cat_p = recode_factor(true_p, "0.06" = ">0.05", "0.1" = ">0.05", "0.5" = ">0.05", "0.8" = ">0.05",
-                          .ordered = TRUE))
+    cat_p = recode_factor(true_p, 
+      "0.06" = ">0.05", "0.1" = ">0.05", "0.5" = ">0.05", "0.8" = ">0.05",
+      .ordered = TRUE))
 ```
 
 ### Model
 
-Now we fit several models of increasing complexity (non-exhaustively), and then test for potential overfitting via 10-fold cross-validation (CV). The often recommended approximations of leave-one-out CV indicated poor suitability here, likely due to some peculiar cases still in the data (removing some of the aforementioned outliers would help to some extend). **Note: Estimating all these models takes some time (~few hours and additional day or so for cross validation, unless fully parallelized)!**.
+Now we fit several models of increasing complexity (non-exhaustively), and then test for potential overfitting via 10-fold cross-validation (CV) with all observations from the same participant placed in the same fold (i.e. we predict new individuals). **Note: Estimating all these models takes some time unless fully parallelized.**.
 
 Our first model contains interaction of visualization style and $p-value$ (in logit-scale), and we allow these effects vary depending whether we are under or over the $p=0.05$. The individual random effect part contains only main effects, and the zero-one cases are explained with visualization and p-value, with a simple random intercept for participant level variation. Note that given that the answer is 0 or 1 (equation of `zoi`), the classification between these two should depend only on $p$-value (equation of `coi`).
 
@@ -516,196 +508,388 @@ fit8 <- brm(bf(
 saveRDS(fit8, file = "experiment1/results/fit8.rds")
 ```
 
-Let's perform cross-validation for these models and see which one performs best:
-```{r, eval = FALSE}
-K <- 10
-folds <- loo::kfold_split_grouped(K = K, x = fit1$data$id)
-kfold1 <- kfold(fit1, folds = folds)
-kfold2 <- kfold(fit2, folds = folds)
-kfold3 <- kfold(fit3, folds = folds)
-kfold4 <- kfold(fit4, folds = folds)
-kfold5 <- kfold(fit5, folds = folds)
-kfold6 <- kfold(fit6, folds = folds)
-kfold7 <- kfold(fit7, folds = folds)
-kfold8 <- kfold(fit8, folds = folds)
+In the above eight models we allowed individually varying overall confidence levels and probability of extreme answer. However, as pointed by one of the reviewers of the earlier version of the paper, it is likely that participants have also used different scales of confidence, e.g. one participant might have had less variation in the answers overall than another. It is also possible that there is a differences in this variation based on the visualization style. Therefore we will test few other models based on models 1, 2, and 3.
+
+First we expand our first model to also allow $\sigma$, variation in confidence (when it is not zero or one), to vary between participants:
+```{r, eval = FALSE, cache = TRUE}
+fit9 <- brm(bf(
+  confidence ~ 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ (1 | id)),
+  data = data,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+saveRDS(fit9, file = "experiment1/results/fit9.rds")
 ```
 
-```{r, eval = FALSE}
-save(kfold1, kfold2, kfold3, kfold4, kfold5, kfold6, kfold7, kfold8, folds,
-     file = "experiment1/results/experiment1_kfolds_full_data.rds")
+Now same with expertise (i.e. model 2 with varying sigma):
+```{r, eval = FALSE, cache = TRUE}
+fit10 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ (1 | id)),
+  data = data,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+saveRDS(fit10, file = "experiment1/results/fit10.rds")
 ```
 
-```{r kfold_comparison_exp1}
-load("experiment1/results/experiment1_kfolds_full_data.rds")
+And same addition to model 3: 
+```{r, eval = FALSE, cache = TRUE}
+fit11 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ (1 | id)),
+  data = data, 
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+saveRDS(fit11, file = "experiment1/results/fit11.rds")
+```
+
+Finally, we expand these three models with visualization style as predictor of sigma:
+```{r, eval = FALSE, cache = TRUE}
+fit12 <- brm(bf(
+  confidence ~ 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+saveRDS(fit12, file = "experiment1/results/fit12.rds")
+
+fit13 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+saveRDS(fit13, file = "experiment1/results/fit13.rds")
+
+fit14 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data, 
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+saveRDS(fit14, file = "experiment1/results/fit14.rds")
+```
+
+Let's perform the 10-fold cross-validation for these models as well.
+```{r, eval = FALSE, cache = TRUE}
+kfold9 <- kfold(fit9, folds = folds, chains = 1)
+kfold10 <- kfold(fit10, folds = folds, chains = 1)
+kfold11 <- kfold(fit11, folds = folds, chains = 1)
+kfold12 <- kfold(fit12, folds = folds, chains = 1)
+kfold13 <- kfold(fit13, folds = folds, chains = 1)
+kfold14 <- kfold(fit14, folds = folds, chains = 1)
+```
+
+```{r, cache = TRUE, echo = FALSE}
+load("experiment1/results/experiment1_kfold.rds")
+```
+```{r, eval = FALSE, cache = TRUE}
+save(kfold1, kfold2, kfold3, kfold4, 
+  kfold5, kfold6, kfold7, kfold8, kfold9, kfold10, 
+  kfold11, kfold12, kfold13, kfold14, folds,
+  file = "experiment1/results/experiment1_kfold.rds")
+```
+
+```{r kfold_comparison_exp1b, eval = TRUE, cache = TRUE}
 loo::compare(kfold1, kfold2, kfold3, kfold4, 
-             kfold5, kfold6, kfold7, kfold8)
+  kfold5, kfold6, kfold7, kfold8, kfold9, kfold10, 
+  kfold11, kfold12, kfold13, kfold14)
 ```
 
-Differences are quite small between some of the models (note the standard errors), so let's choose the simplest one (model 1, no expertise). 
+We see that compared to the models without the random effect on $\sigma$, the models with expertise variable seem to be preferred in terms of their predictive ability. However, as we are not particularly interested in the expertise, we will choose best model without expertise, i.e. model 9. However, the overall conclusions are same whether we choose model 9 or model 14 (we also show results for model 14 later in this document).
 
 ### Results
 
 First, let us check the parameter estimates of the model:
 
-```{r fit_exp1}
-fit_exp1 <- readRDS("experiment1/results/fit1.rds")
+```{r fit_exp1, cache = TRUE}
+fit_exp1 <- readRDS("experiment1/results/fit9.rds")
 fit_exp1
 ```
 
 Now we look at some figures. First we draw some samples from posterior predictive distribution and see how well our simulated replications match with our data:
-```{r pp_check_exp1_a}
+```{r pp_check_exp1_a, cache = TRUE}
 pp_check(fit_exp1, type = "hist", nsamples = 11)
 ```
 
 We see that the histograms of the replicated datasets are similar to observed one, perhaps slight exaggeration of the tails. Next, same thing but grouped with underlying $p$-value:
 
-```{r pp_check_exp1_b}
-pp_check(fit_exp1, type = "stat_grouped", group = "true_p")
+```{r pp_check_exp1_b, cache = TRUE}
+pp_check(fit_exp1, type = "stat_grouped", group = "true_p", stat="median")
+```
+Same with grouping based on visualization:
+```{r pp_check_exp1_c, cache = TRUE}
+pp_check(fit_exp1, type = "stat_grouped", group = "viz", stat="median")
 ```
 
 Noting the scale on the x-axis, our histograms look reasonable given our data.
 
-Finally, grouping based on visualization:
-```{r pp_check_exp1_c}
-pp_check(fit_exp1, type = "stat_grouped", group = "viz")
-```
+Now we are ready to analyze the results. First, the posterior curves of the confidence given the underlying $p$-value:
 
-Looks fine. Now we are ready to analyze the results. First, the posterior curves of the confidence given the underlying $p$-value:
-```{r posterior_curves_data_exp1, cache = TRUE}
-combinations_exp1 <- fit_exp1$data %>% 
+```{r, cache = TRUE}
+comb_exp1 <- fit_exp1$data %>% 
   data_grid(viz, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %>% 
   filter(interaction(logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %in% 
-           unique(interaction(fit_exp1$data$logit_p, fit_exp1$data$p_lt0.05, 
-                              fit_exp1$data$p_eq0.05, fit_exp1$data$cat_p, 
-                              fit_exp1$data$true_p)))
+      unique(interaction( 
+        fit_exp1$data$logit_p, fit_exp1$data$p_lt0.05, 
+        fit_exp1$data$p_eq0.05, fit_exp1$data$cat_p, 
+        fit_exp1$data$true_p)))
 
-f_mu_exp1 <- fitted(fit_exp1, newdata = combinations_exp1, re_formula = NA)
-f_zoi_exp1 <- fitted(fit_exp1, newdata = combinations_exp1, re_formula = NA, dpar = "zoi")
+f_mu_exp1 <- posterior_epred(fit_exp1, newdata = comb_exp1, re_formula = NA)
 
-f_df_mu_exp1 <- data.frame(
-  p = plogis(combinations_exp1$logit_p), 
-  viz = combinations_exp1$viz, 
-  f_mu_exp1)
+d <- data.frame(value = c(f_mu_exp1), 
+  p = rep(comb_exp1$true_p, each = nrow(f_mu_exp1)),
+  viz = rep(comb_exp1$viz, each = nrow(f_mu_exp1)),
+  iter = 1:nrow(f_mu_exp1))
+levels(d$viz) <- c("p-value", "CI", "Gradient CI", "Violin CI")
 ```
 
-```{r posterior_curves_exp1}
-x_ticks <- c(0.001, 0.01, 0.04, 0.05, 0.06, 0.1, 0.5, 0.8)
+```{r, cache = TRUE}
+sumr <- d %>% group_by(viz, p) %>%
+  summarise(Estimate = mean(value), 
+    Q2.5 = quantile(value, 0.025), 
+    Q97.5 = quantile(value, 0.975)) %>%
+   mutate(p = as.numeric(levels(p))[p])
+
+x_ticks <- c(0.001, 0.01, 0.04, 0.06, 0.1, 0.5, 0.8)
 y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
+dodge <- 0.19
 
-p1 <- f_df_mu_exp1 %>% 
+p1 <- sumr %>%
   ggplot(aes(x = p, y = Estimate, colour = viz)) + 
-  geom_line(
-    position = position_dodge(0.19)) +
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", 
+    values = cols[1:4],
+    labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, 
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
+
+
+p2 <- sumr %>% filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
   geom_linerange(
     aes(ymin = Q2.5, ymax = Q97.5), 
-    position = position_dodge(0.19)) + 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
   ylab("Confidence") + xlab("p-value") + 
-  scale_color_discrete("Representation", 
-                       labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
-  scale_fill_discrete("Representation", 
-                      labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
-  theme_bw() + 
-  scale_y_continuous(trans="logit", breaks = y_ticks, minor_breaks = NULL, labels = y_ticks) + 
+  scale_color_manual("Representation", 
+    values =  cols[1:4],
+    labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
   scale_x_continuous(trans="logit",
-                     breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10), legend.position = "bottom",  
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))  + 
-  geom_rect(xmin=qlogis(0.04), xmax=qlogis(0.06), ymin=qlogis(0.25), ymax=qlogis(0.72), 
-            color = "grey70", alpha=0, linetype="dashed")
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
 
-
-p2 <- f_df_mu_exp1 %>% filter(p > 0.02 & p < 0.09) %>%
-  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
-  geom_line(position = position_dodge(0.05)) +
-  geom_linerange(
-    aes(ymin = Q2.5, ymax = Q97.5), 
-    position = position_dodge(0.05)) + 
-  ylab("Confidence") + xlab("p-value") + 
-  theme_bw() + 
-  scale_y_continuous(trans="logit", breaks = y_ticks,# position = "right",
-                     minor_breaks = NULL, labels = y_ticks) + 
-  scale_x_continuous(trans="logit",
-                     breaks = x_ticks, labels = x_ticks, 
-                     minor_breaks = NULL) + 
-  theme(axis.text.x = element_text(size = 10), legend.position = "none",  
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        strip.text.x = element_text(size = 10),
-        plot.background = element_blank()) 
-
-p1 + annotation_custom(
-  ggplotGrob(p2), 
-  xmin = qlogis(0.15), xmax = qlogis(0.85), ymin = qlogis(0.2), ymax = qlogis(0.95))
-
+p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) + 
+  annotation_custom(
+    ggplotGrob(p2), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+p
+```
+```{r, echo = FALSE, eval = FALSE}
+ggsave(p, filename = "experiment1/results/exp1_confidence.pdf", 
+  width = 2*8.5, height = 12.5, 
+  unit = "cm", device = "pdf")
 ```
 
 The confidence level with traditional CI is most constant of all techniques when are within "statistically significant region" i.e. $p<0.05$, but there is a large drop when moving to $p>0.05$, even larger than with textual information with $p$-value, which behaves nearly identically with the Violin CI plot until $p=0.05$, when the confidence in $p$-value representation drops below all other techniques. The Gradient CI plot and Violin CI plot behave similarly, except the confidence level in case of Gradient CI plot is constantly below the Violin CI plot.
 
 The probability curves of extreme answer show that traditional CI produces more easily extreme answers when $p<0.05$ (so the extreme answer is likely of full confidence), whereas $p$-value is more likely to lead extreme answer (zero confidence) when $p>0.05$. Differences between techniques seem nevertheless quite small compared to overall variation in the estimates.
 
-```{r extreme_exp1_plot}
+```{r extreme_exp1_plot, cache = TRUE}
+f_zoi_exp1 <- fitted(fit_exp1, newdata = combinations_exp1, re_formula = NA, dpar = "zoi")
 df_01_exp1 <- data.frame(
   p = plogis(combinations_exp1$logit_p), 
   viz = combinations_exp1$viz, 
-  f_zoi_exp1)
+  f_zoi_exp1_sumr)
 
 y_ticks <- c(0.001, 0.01, seq(0.1,0.9,by=0.2))
 
-df_01_exp1 %>% 
+p <- df_01_exp1 %>% 
   ggplot(aes(x = p, y = Estimate, colour = viz)) +
   geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
-                 position = position_dodge(width=0.19)) + 
+    position = position_dodge(width=0.19)) + 
   geom_line(alpha=0.5, position = position_dodge(width=0.19))  + 
   ylab("Probability of all-or-none answer") + xlab("p-value") + 
-  scale_fill_discrete("Representation", 
-                      labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
-  scale_colour_discrete("Representation", 
-                        labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
-  theme_bw() + 
+  scale_color_manual("Representation", 
+    values =  cols[1:4],
+    labels = c("p-value", "CI", "Gradient CI", "Violin CI")) + 
+  theme_classic() + 
   scale_y_continuous(trans = "logit",
-                     breaks = y_ticks, labels = y_ticks, minor_breaks = NULL) + 
+    breaks = y_ticks, labels = y_ticks, minor_breaks = NULL) + 
   scale_x_continuous(trans = "logit",
-                     breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10), legend.position = "bottom",   
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10)) 
+    axis.title.x = element_text(size = 12),
+    axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
+    legend.text=element_text(size = 10), strip.text.x = element_text(size = 10)) 
+p
 ```
 
 Finally, we can compute the average drop in perceived confidence when moving from $p = 0.04$ to $p=0.06$:
 
-```{r drop1}
-dc <- combinations_exp1 %>%
-  filter(true_p == "0.04" | true_p == "0.06")
-f_mu_exp1 <- fitted(fit_exp1, newdata = dc, re_formula = NA, summary = FALSE)
-
-d <- data.frame(value = c(f_mu_exp1), 
-                p = rep(dc$true_p, each = nrow(f_mu_exp1)),
-                viz = rep(dc$viz, each = nrow(f_mu_exp1)),
-                iter = 1:nrow(f_mu_exp1))
-
+```{r drop1, cache = TRUE}
 d %>% group_by(viz, iter) %>% 
   summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
   summarise(mean = mean(difference), sd = sd(difference),
-      "2.5%" = quantile(difference, 0.025), 
-      "97.5" = quantile(difference, 0.975))
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5" = quantile(difference, 0.975))
+```
 
+Let's also visualize this:
+```{r, cache = TRUE}
+p <- d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>% 
+  ggplot(aes(x = difference, fill = viz, colour = viz)) + 
+  geom_density(bw = 0.01, alpha = 0.6) +
+  theme_classic() + 
+  scale_fill_manual("Representation", 
+    values = cols[1:4]) + 
+  scale_colour_manual("Representation", 
+    values = cols[1:4]) + 
+  ylab("Posterior density") + 
+  xlab("Cliff effect") +
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14)) 
+p
+```
+```{r, echo = FALSE, eval = FALSE}
+ggsave(p, filename = "experiment1/results/exp1_cliff.pdf", 
+  width = 2*8.5, height = 6, 
+  unit = "cm", device = "pdf")
+```
+
+Note that the cliff effect between viz styles are not independent, i.e. if there is a large cliff effect with Violin CI then the cliff effect with $p$-value is likely larger as well. This can be seen from the posterior probabilities that cliff effect is larger with viz 1 (row variable) than with viz 2 (column variable):
+
+```{r 'postprob1', cache = TRUE}
+postprob <- d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  group_by(iter) %>% 
+  mutate(p_vs_ci = difference[viz == "p-value"] - difference[viz == "CI"],
+    p_vs_gradient = difference[viz == "p-value"] - difference[viz == "Gradient CI"],
+    p_vs_violin = difference[viz == "p-value"] - difference[viz == "Violin CI"],
+    ci_vs_gradient = difference[viz == "CI"] - difference[viz == "Gradient CI"],
+    ci_vs_violin = difference[viz == "CI"] - difference[viz == "Violin CI"],
+    gradient_vs_violin = difference[viz == "Gradient CI"] - 
+      difference[viz == "Violin CI"]) %>%
+  ungroup() %>% summarise(
+    "P(p > CI)" = mean(p_vs_ci > 0),
+    "P(p > gradient)" = mean(p_vs_gradient > 0),
+    "P(p > violin)" = mean(p_vs_violin > 0),
+    "P(CI > gradient)" = mean(ci_vs_gradient > 0),
+    "P(CI > violin)" = mean(ci_vs_violin > 0),
+    "P(gradient > violin)" = mean(gradient_vs_violin > 0),
+    "P(p > CI)" = mean(p_vs_ci > 0))
+round(t(as.data.frame(postprob)), 2)
 ```
 
 ### Subjective rankings of the representation styles
 
 Now we focus on analysis the subjective rankings of the technique. Read the feedback data and merge it with the previous data which contains the expertise information: 
 
-```{r create_rankdata_exp1}
+```{r create_rankdata_exp1, eval = FALSE, cache = TRUE}
 files <- list.files(path, pattern = "subjective", full.names = TRUE)
 n <- length(files)
 
 rankdata <- data.frame(id = rep(1:n, each=4),
-                       viz = factor(rep(c("p", "ci", "violin", "gradient")), 
-                                    levels=c("p", "ci", "violin", "gradient")),
-                       rank = factor(NA, levels=1:4))
+  viz = factor(rep(c("p", "ci", "violin", "gradient")), 
+    levels=c("p", "ci", "violin", "gradient")),
+  rank = factor(NA, levels=1:4))
 
 for(i in 1:n) {
   fb <- fromJSON(files[i])
@@ -714,50 +898,74 @@ for(i in 1:n) {
 }
 
 rankdata$viz <- recode_factor(rankdata$viz, "p" = "p", "ci" = "CI",
-                              "gradient" = "gradient", "violin" = "violin")
+  "gradient" = "gradient", "violin" = "violin")
 rankdata$rank <- factor(rankdata$rank, ordered = TRUE)
 rankdata$id <- factor(rankdata$id, levels = levels(data$id))
 ranks_exp1 <- distinct(inner_join(rankdata, data[,c("id", "viz", "expertise")]))
 ```
+```{r, echo=FALSE, cache = TRUE}
+ranks_exp1 <- readRDS("experiment1/data/exp1_rankdata.rds")
+fit_rank11 <- readRDS("experiment1/results/fit_rank11.rds")
+fit_rank21 <- readRDS("experiment1/results/fit_rank21.rds")
+```
 
 For analysing the subjective rankings of the representation styles, we use a Bayesian ordinal regression model. We test two models, one with expertise and another without it:
-```{r fit_models_rank_exp1, cache = TRUE}
+```{r fit_models_rank_exp1, eval=FALSE, cache = TRUE}
 fit_rank11 <- brm(rank ~ viz * expertise + (1 | id), family = cumulative, 
-                  data = ranks_exp1, refresh = 0)
+  data = ranks_exp1, refresh = 0)
 fit_rank21 <- brm(rank ~ viz + (1 | id), family=cumulative, 
-                  data = ranks_exp1, refresh = 0)
-
+  data = ranks_exp1, refresh = 0)
+saveRDS(fit_rank11, file = "experiment1/results/fit_rank11.rds")
+saveRDS(fit_rank21, file = "experiment1/results/fit_rank21.rds")
+```
+```{r, cache=TRUE}
 fit_rank11 <- add_criterion(fit_rank11, "loo")
 fit_rank21 <- add_criterion(fit_rank21, "loo")
-
 loo_compare(fit_rank11, fit_rank21)
 ```
-Expertise doesn't add much, so we use the simpler model:
-```{r rank_exp1_results}
+
+Expertise doesn't improve the model, so we use the simpler model:
+```{r rank_exp1_results, cache = TRUE}
 fit_rank1 <- fit_rank21
 fit_rank1
 ```
 
 Plot ranking probabilities:
-```{r rank_exp1_plot}
+```{r rank_exp1_plot, cache = TRUE}
+colsrank <- scales::brewer_pal(palette = "PiYG",
+  direction = -1)(4)
 
-effects_exp1 <- marginal_effects(fit_rank1, effects = "viz", plot = FALSE, categorical = TRUE, 
-                                 reformula=NA)
-ggplot(effects_exp1[[1]], aes(x = viz, y = estimate__, colour = cats__)) + 
+effects_exp1 <- conditional_effects(fit_rank1, effects = "viz", 
+  plot = FALSE, categorical = TRUE, reformula = NA)
+
+p <- ggplot(effects_exp1[[1]], aes(x = viz, y = estimate__, colour = cats__)) + 
   geom_point(position=position_dodge(0.5)) + 
-  geom_errorbar(width=0.25, aes(ymin=lower__, ymax = upper__),position=position_dodge(0.5)) + 
-  theme_bw() + 
+  geom_errorbar(width=0.25, aes(ymin=lower__, ymax = upper__), 
+    position = position_dodge(0.5)) + 
+  theme_classic() + 
   ylab("Ranking probability") + xlab("Representation") +
   scale_x_discrete(labels =c("p-value", "CI", "Gradient CI", "Violin CI")) +
-  scale_color_discrete("Rank", 
-                       labels = c("1 (best)", "2", "3", "4 (worst)")) + 
-  theme(axis.text.x = element_text(size = 10), legend.position = "bottom", 
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text = element_text(size = 10), strip.text.x = element_text(size = 10))
+  scale_color_manual("Rank", 
+    values = colsrank,
+    labels = c("1 (best)", "2", "3", "4 (worst)")) + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12,hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14)) 
+p
+```
+```{r, eval = FALSE, echo = FALSE}
+ggsave(p, file="experiment1/results/ranks1.pdf",  
+       width = 2*8.5, height = 6, 
+       unit = "cm", device = "pdf")
 ```
 
-We see that the $p$-values are likely to be ranked very low, while violin CI and classic CI are the most preferred options, and gradient CI seems to divide opinion most.
+We see that the $p$-values are likely to be ranked very low, while violin CI and classic CI are the most preferred options, and gradient CI seems to divide opinions most.
 
 ## Two-sample experiment
 
@@ -765,14 +973,14 @@ Let us turn our attention to the second experiment, for which we essentially use
 
 ### Creating the dataset
 
-```{r create_data_exp2}
+```{r create_data_exp2, eval = FALSE}
 path <- "experiment2/data"
 answers <- list.files(path, pattern="answers", full.names = TRUE)
 n <- length(answers)
 # create a data frame for the results
 data_raw <- data.frame(id = rep(1:n, each = 32), viz = NA, 
-                       replication = NA, value = NA,
-                       expertise = NA, degree = NA)
+  replication = NA, value = NA,
+  expertise = NA, degree = NA)
 # read in answers
 for(i in 1:n){
   x <- strsplit(fromJSON(answers[i]), ",")
@@ -784,57 +992,41 @@ for(i in 1:n){
 }
 true_p <- c(0.001, 0.01, 0.04, 0.05, 0.06, 0.1, 0.5, 0.8)
 
-data_all <- data_raw %>% mutate(n = factor(ifelse(as.numeric(id) %% 8 < 4, 50, 200)),
-                                id = factor(id),
-                                viz = relevel(factor(viz, labels = c("CI", 
-                                                                     "Gradient", 
-                                                                     "Continuous Violin", 
-                                                                     "Discrete Violin")),
-                                              "CI"),
-                                replication = as.numeric(replication),
-                                value = as.numeric(value),
-                                p = true_p[replication],
-                                true_p = factor(p), # for monotonic but non-linear effect on confidence
-                                confidence = (value - 1) / 99,
-                                expertise = factor(expertise)) %>% arrange(id, viz)
+data2 <- data_raw %>% mutate(n = factor(ifelse(as.numeric(id) %% 8 < 4, 50, 200)),
+  id = factor(id),
+  viz = relevel(factor(viz, labels = c("CI", 
+    "Gradient", 
+    "Continuous Violin", 
+    "Discrete Violin")),
+    "CI"),
+  replication = as.numeric(replication),
+  value = as.numeric(value),
+  p = true_p[replication],
+  true_p = factor(p), # for monotonic but non-linear effect on confidence
+  confidence = (value - 1) / 99,
+  expertise = factor(expertise)) %>% arrange(id, viz)
 
-data_all$expertise <- recode_factor(data_all$expertise, 
-                                    "Statistics" = "Stats/ML",
-                                    "machine learning, statistics" = "Stats/ML",
-                                    "infovis" = "VIS/HCI",
-                                    "HCI and VIS" = "VIS/HCI",
-                                    "HCI" = "VIS/HCI",
-                                    "vis" = "VIS/HCI",
-                                    "Vis and HCI" = "VIS/HCI", 
-                                    "Visualisation" = "VIS/HCI",
-                                    "Visualization" = "VIS/HCI",
-                                    .default = "Other")
-data_all$expertise <- relevel(data_all$expertise, "Other")
-
-# no outliers using the strict criterion below
-# outliers <- data_all %>% group_by(id, viz) %>% 
-#   summarize(
-#     mistake = confidence[p == 0.001] < confidence[p == 0.8]) %>% 
-#   filter(mistake)
-# 
-# n_out <- nrow(outliers)
-# 
-# data_all %>% 
-#   filter((interaction(id,viz) %in% interaction(outliers$id, outliers$viz))) %>%
-#   ggplot(aes(x = p, y = confidence, group = id, colour = id)) + 
-#   geom_line() + 
-#   geom_point() +
-#   theme_bw() + 
-#   facet_wrap(~ viz)
-
-data2 <- data_all #%>% filter(!(interaction(id,viz) %in% interaction(outliers$id, outliers$viz)))
-
+data2$expertise <- recode_factor(data2$expertise, 
+  "Statistics" = "Stats/ML",
+  "machine learning, statistics" = "Stats/ML",
+  "infovis" = "VIS/HCI",
+  "HCI and VIS" = "VIS/HCI",
+  "HCI" = "VIS/HCI",
+  "vis" = "VIS/HCI",
+  "Vis and HCI" = "VIS/HCI", 
+  "Visualisation" = "VIS/HCI",
+  "Visualization" = "VIS/HCI",
+  .default = "Other")
+data2$expertise <- relevel(data2$expertise, "Other")
+```
+```{r, echo=FALSE, cache = TRUE}
+data2 <- readRDS("experiment2/data/exp2_data.rds")
 ```
 
 ### Descriptive statistics
 
 As in first experiment, we first look at some descriptive statistics. First the cliff effect as difference between confidence when $p$-value=0.04 versus $p$-value=0.06:
-```{r cliff_effect_exp2}
+```{r cliff_effect_exp2, cache = TRUE}
 data2 %>% group_by(id, viz) %>% 
   summarize(difference = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz) %>%
@@ -852,13 +1044,13 @@ data2 %>% group_by(id, viz) %>%
   geom_point(alpha = 0.5, position = position_jitter(0.1)) +
   scale_y_continuous("Difference in confidence when p-value is 0.06 vs 0.04") +
   scale_x_discrete("Representation") +
-  theme_bw() 
+  theme_classic() 
 ```
 
 Interestingly, while the cliff effect is again largest with classic CI, there are some cases where the discrete Violin CI has lead to very large drop in confidence. Overall the cliff effect seems to be much smaller than in the one-sample case (there the average drop was around 0.1-0.25 depending on the technique).
 
 Now same but with subgrouping using sample size:
-```{r cliff_effect_n_exp2}
+```{r cliff_effect_n_exp2, cache=TRUE}
 data2 %>% group_by(id, viz, n) %>% 
   summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, n) %>%
@@ -870,7 +1062,7 @@ data2 %>% group_by(id, viz, n) %>%
     "97.5%" = quantile(diff, 0.975))
 ```
 and expertise:
-```{r cliff_effect_expertise_exp2}
+```{r cliff_effect_expertise_exp2, cache=TRUE}
 data2 %>% group_by(id, viz, expertise) %>% 
   summarize(diff = confidence[true_p==0.04] - confidence[true_p==0.06])  %>% 
   group_by(viz, expertise) %>%
@@ -884,7 +1076,7 @@ data2 %>% group_by(id, viz, expertise) %>%
 data2 %>% group_by(id, viz,expertise) %>% 
   summarize(
     difference = confidence[true_p==0.04] - confidence[true_p==0.06]) %>%
-  ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_bw() + 
+  ggplot(aes(x=viz, y = difference)) + geom_violin() + theme_classic() + 
   scale_y_continuous("Difference in confidence when p-value is 0.04 vs 0.06") +
   scale_x_discrete("Representation") +
   geom_point(aes(colour = expertise), position=position_jitter(0.1))
@@ -893,7 +1085,7 @@ data2 %>% group_by(id, viz,expertise) %>%
 It is difficult to say anything definite but there doesn't seem to be clear differences between samples sizes or expertise, although again it is VIS/HCI group which can be "blamed" for extreme drops in violin cases.
 
 Let's check how the much extreme answers (full or zero confidence) there are in different groups:
-```{r extreme_exp2}
+```{r extreme_exp2, cache=TRUE}
 data2 %>% group_by(id, viz, n) %>% 
   mutate(extreme = confidence %in% c(0, 1))  %>% 
   group_by(viz, n) %>%
@@ -915,18 +1107,18 @@ Compared to first experiment, here Stats/ML group performs best, but we must kee
 ### Model
 
 Again, create some additional variables:
-```{r additional_vars_exp2}
+```{r additional_vars_exp2, cache=TRUE}
 data2 <- data2 %>% 
   mutate(
     logit_p = qlogis(p),
     p_lt0.05 = factor(p < 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
     p_eq0.05 = factor(p == 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
     cat_p = recode_factor(true_p, "0.06" = ">0.05", "0.1" = ">0.05", "0.5" = ">0.05", "0.8" = ">0.05",
-                          .ordered = TRUE))
+      .ordered = TRUE))
 ```
 
-And fit the same eight models as in first experiment:
-```{r eval = FALSE}
+And fit the same 14 models as in first experiment:
+```{r eval = FALSE, cache = TRUE}
 fit1 <- brm(bf(
   confidence ~ 
     viz * p_lt0.05 * logit_p + 
@@ -939,7 +1131,7 @@ fit1 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit2 <- brm(bf(
   confidence ~ 
@@ -955,7 +1147,7 @@ fit2 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit3 <- brm(bf(
   confidence ~ 
@@ -971,7 +1163,7 @@ fit3 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit4 <- brm(bf(
   confidence ~ 
@@ -987,7 +1179,7 @@ fit4 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit5 <- brm(bf(
   confidence ~ 
@@ -1001,7 +1193,7 @@ fit5 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit6 <- brm(bf(
   confidence ~ 
@@ -1017,7 +1209,7 @@ fit6 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit7 <- brm(bf(
   confidence ~ 
@@ -1031,7 +1223,7 @@ fit7 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
 
 fit8 <- brm(bf(
   confidence ~ 
@@ -1046,7 +1238,105 @@ fit8 <- brm(bf(
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
   chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
-  cores = 4, refresh = 0)
+  refresh = 0)
+
+fit9 <- brm(bf(
+  confidence ~ 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ (1 | id)),
+  data = data2,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+
+fit10 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ (1 | id)),
+  data = data2,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+
+fit11 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ (1 | id)),
+  data = data2, 
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+
+fit12 <- brm(bf(
+  confidence ~ 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data2,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+
+fit13 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (1 | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data2,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
+
+fit14 <- brm(bf(
+  confidence ~ 
+    viz * expertise + 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 + logit_p | id),
+  zoi ~ 
+    viz * expertise + 
+    viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data2, 
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, iter = 2000, init = 0, save_warmup = FALSE,
+  refresh = 0)
 
 saveRDS(fit1, file = "experiment2/results/fit1.rds")
 saveRDS(fit2, file = "experiment2/results/fit2.rds")
@@ -1056,245 +1346,353 @@ saveRDS(fit5, file = "experiment2/results/fit5.rds")
 saveRDS(fit6, file = "experiment2/results/fit6.rds")
 saveRDS(fit7, file = "experiment2/results/fit7.rds")
 saveRDS(fit8, file = "experiment2/results/fit8.rds")
-
+saveRDS(fit9, file = "experiment2/results/fit9.rds")
+saveRDS(fit10, file = "experiment2/results/fit10.rds")
+saveRDS(fit11, file = "experiment2/results/fit11.rds")
+saveRDS(fit12, file = "experiment2/results/fit12.rds")
+saveRDS(fit13, file = "experiment2/results/fit13.rds")
+saveRDS(fit14, file = "experiment2/results/fit14.rds")
 ```
 
 As in first experiment, we perform cross-validation for these models and see which one performs best:
-```{r, eval = FALSE}
+```{r, eval = FALSE, cache = TRUE}
 K <- 10
 folds <- loo::kfold_split_grouped(K = K, x = fit1$data$id)
-kfold1 <- kfold(fit1, folds = folds)
-kfold2 <- kfold(fit2, folds = folds)
-kfold3 <- kfold(fit3, folds = folds)
-kfold4 <- kfold(fit4, folds = folds)
-kfold5 <- kfold(fit5, folds = folds)
-kfold6 <- kfold(fit6, folds = folds)
-kfold7 <- kfold(fit7, folds = folds)
-kfold8 <- kfold(fit8, folds = folds)
+kfold1 <- kfold(fit1, folds = folds, chains = 1)
+kfold2 <- kfold(fit2, folds = folds, chains = 1)
+kfold3 <- kfold(fit3, folds = folds, chains = 1)
+kfold4 <- kfold(fit4, folds = folds, chains = 1)
+kfold5 <- kfold(fit5, folds = folds, chains = 1)
+kfold6 <- kfold(fit6, folds = folds, chains = 1)
+kfold7 <- kfold(fit7, folds = folds, chains = 1)
+kfold8 <- kfold(fit8, folds = folds, chains = 1)
+kfold9 <- kfold(fit9, folds = folds, chains = 1)
+kfold10 <- kfold(fit10, folds = folds, chains = 1)
+kfold11 <- kfold(fit11, folds = folds, chains = 1)
+kfold12 <- kfold(fit12, folds = folds, chains = 1)
+kfold13 <- kfold(fit13, folds = folds, chains = 1)
+kfold14 <- kfold(fit14, folds = folds, chains = 1)
 ```
 
-```{r, eval = FALSE}
-save(kfold1, kfold2, kfold3, kfold4, kfold5, kfold6, kfold7, kfold8, folds,
-     file = "experiment2/results/experiment1_kfolds_full_data.rds")
+```{r, eval = FALSE, cache = TRUE}
+save(kfold1, kfold2, kfold3, kfold4, 
+  kfold5, kfold6, kfold7, kfold8, kfold9, kfold10, 
+  kfold11, kfold12, kfold13, kfold14, folds,
+  file = "experiment2/results/experiment2_kfold.rds")
+```
+```{r, echo = FALSE, cache = TRUE}
+load("experiment2/results/experiment2_kfold.rds")
 ```
 
-```{r kfold_comparison_exp2}
-load("experiment2/results/experiment2_kfolds_full_data.rds")
-loo::compare(kfold1, kfold2, kfold3, kfold4,
-             kfold5, kfold6, kfold7, kfold8)
+```{r kfold_comparison_exp2, eval = TRUE, cache = TRUE}
+loo::compare(kfold1, kfold2, kfold3, kfold4, 
+  kfold5, kfold6, kfold7, kfold8, kfold9, kfold10, 
+  kfold11, kfold12, kfold13, kfold14)
 ```
 
-For this smaller dataset of the second experiment, the simplest model (model 1) is more reasonable choice than the models with more complex interaction terms and expertise as added explanatory variable.
-
-Here are the parameter estimates:
+We now choose model 12, which, compared to the first experiment contains additional $viz$ term in $\sigma$. Here are the parameter estimates:
 
 ### Results
 
-```{r fit_exp2}
-fit_exp2 <- readRDS("experiment2/results/fit1.rds")
+```{r fit_exp2, cache=TRUE}
+fit_exp2 <- readRDS("experiment2/results/fit12.rds")
 fit_exp2
 ```
 
 Now we look at some figures. First we draw some samples from posterior predictive distribution and see how well our simulated replications match with our data:
-```{r pp_check_exp2}
+```{r pp_check_exp2, cache=TRUE}
 pp_check(fit_exp2, type = "hist", nsamples = 11)
-pp_check(fit_exp2, type = "stat_grouped", group = "true_p")
-pp_check(fit_exp2, type = "stat_grouped", group = "viz")
+pp_check(fit_exp2, type = "stat_grouped", group = "true_p", stat = "median")
+pp_check(fit_exp2, type = "stat_grouped", group = "viz", stat = "median")
 ```
 
 Note the difference compared to the first experiment: There is much less extremely confident answers than in the first case which was pretty symmetrical between the zero and full confidence answers. But posterior predictive samples are nicely in line with the data as in the first experiment (it is feasible that the data could have been generated by this model).
 
 Now we are ready to analyze the results. First, the posterior curves of the confidence given the underlying $p$-value:
-```{r posterior_curves_exp2}
-combinations_exp2 <- fit_exp2$data %>%
-  data_grid(viz, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %>%
-  filter(interaction(logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %in%
-           unique(interaction(fit_exp2$data$logit_p, fit_exp2$data$p_lt0.05,
-                              fit_exp2$data$p_eq0.05, 
-                              fit_exp2$data$cat_p, fit_exp2$data$true_p)))
+```{r, cache = TRUE}
+comb_exp2 <- fit_exp2$data %>% 
+  data_grid(viz, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %>% 
+  filter(interaction(logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %in% 
+      unique(interaction( 
+        fit_exp2$data$logit_p, fit_exp2$data$p_lt0.05, 
+        fit_exp2$data$p_eq0.05, fit_exp2$data$cat_p, 
+        fit_exp2$data$true_p)))
 
-f_mu_exp2 <- fitted(fit_exp2, newdata = combinations_exp2, re_formula = NA)
-f_zoi_exp2 <- fitted(fit_exp2, newdata = combinations_exp2, re_formula = NA, dpar = "zoi")
+f_mu_exp2 <- posterior_epred(fit_exp2, newdata = comb_exp2, re_formula = NA)
 
-f_df_mu_exp2 <- data.frame(
-  p = plogis(combinations_exp2$logit_p),
-  viz = combinations_exp2$viz,
-  f_mu_exp2)
-
-
-x_ticks <- c(0.001, 0.01, 0.04, 0.05, 0.06, 0.1, 0.5, 0.8)
-y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
-
-p1 <- f_df_mu_exp2 %>%
-  ggplot(aes(x = p, y = Estimate, colour = viz)) +
-  geom_line(
-    position = position_dodge(0.19)) +
-  geom_linerange(
-    aes(ymin = Q2.5, ymax = Q97.5),
-    position = position_dodge(0.19)) +
-  ylab("Confidence") + xlab("p-value") +
-  scale_color_discrete("Representation",
-                       labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
-  scale_fill_discrete("Representation",
-                      labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
-  theme_bw() +
-  scale_y_continuous(trans="logit", breaks = y_ticks, minor_breaks = NULL, labels = y_ticks) +
-  scale_x_continuous(trans="logit",
-                     breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10), legend.position = "bottom",
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))  +
-  geom_rect(xmin=qlogis(0.04), xmax=qlogis(0.06), ymin=qlogis(0.25), ymax=qlogis(0.72),
-            color = "grey70", alpha=0, linetype="dashed")
-
-
-p2 <- f_df_mu_exp2 %>% filter(p > 0.02 & p < 0.09) %>%
-  ggplot(aes(x = p, y = Estimate, colour = viz)) +
-  geom_line(position = position_dodge(0.05)) +
-  geom_linerange(
-    aes(ymin = Q2.5, ymax = Q97.5),
-    position = position_dodge(0.05)) +
-  ylab("Confidence") + xlab("p-value") +
-  theme_bw() +
-  scale_y_continuous(trans="logit", breaks = y_ticks,# position = "right",
-                     minor_breaks = NULL, labels = y_ticks) +
-  scale_x_continuous(trans="logit",
-                     breaks = x_ticks, labels = x_ticks,
-                     minor_breaks = NULL) +
-  theme(axis.text.x = element_text(size = 10), legend.position = "none",
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        strip.text.x = element_text(size = 10),
-        plot.background = element_blank())
-
-p1 + annotation_custom(
-  ggplotGrob(p2),
-  xmin = qlogis(0.15), xmax = qlogis(0.85), ymin = qlogis(0.2), ymax = qlogis(0.95))
+d <- data.frame(value = c(f_mu_exp2), 
+  p = rep(comb_exp2$true_p, each = nrow(f_mu_exp2)),
+  viz = rep(comb_exp2$viz, each = nrow(f_mu_exp2)),
+  iter = 1:nrow(f_mu_exp2))
 
 ```
 
+```{r, cache = TRUE}
+sumr <- d %>% group_by(viz, p) %>%
+  summarise(Estimate = mean(value), 
+    Q2.5 = quantile(value, 0.025), 
+    Q97.5 = quantile(value, 0.975)) %>%
+   mutate(p = as.numeric(levels(p))[p])
+
+x_ticks <- c(0.001, 0.01, 0.04, 0.06, 0.1, 0.5, 0.8)
+y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
+dodge <- 0.19
+names(cols)[2:5] <- levels(d$viz)
+p1 <- sumr %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", 
+    values = cols[2:5],
+    labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, 
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
+
+
+p2 <- sumr %>% filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", 
+    values =  cols[2:5],
+    labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) + 
+  annotation_custom(
+    ggplotGrob(p2), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+p
+```
+```{r, echo = FALSE, eval = FALSE}
+ggsave(p, filename = "experiment2/results/exp2_confidence.pdf", 
+  width = 2*8.5, height = 12.5, 
+  unit = "cm", device = "pdf")
+```
+
+
 And the probability of extreme answer:
-```{r extreme_exp2_plot}
+```{r extreme_exp2_plot, cache=TRUE}
+
+f_zoi_exp2 <- fitted(fit_exp2, newdata = comb_exp2, re_formula = NA, dpar = "zoi")
 df_01_exp2 <- data.frame(
-  p = plogis(combinations_exp2$logit_p),
-  viz = combinations_exp2$viz,
+  p = plogis(comb_exp2$logit_p),
+  viz = comb_exp2$viz,
   f_zoi_exp2)
 
 y_ticks <- c(0.001, 0.01, seq(0.1,0.9,by=0.2))
 
-df_01_exp2 %>%
+p <- df_01_exp2 %>%
   ggplot(aes(x = p, y = Estimate, colour = viz)) +
   geom_linerange(aes(ymin = Q2.5, ymax = Q97.5),
-                 position = position_dodge(width=0.19)) +
+    position = position_dodge(width=0.19)) +
   geom_line(alpha=0.5, position = position_dodge(width=0.19))  +
   ylab("Probability of all-or-none answer") + xlab("p-value") +
-  scale_fill_discrete("Representation",
-                      labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
-  scale_colour_discrete("Representation",
-                        labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
-  theme_bw() +
+  scale_color_manual("Representation", 
+    values =  cols[2:5],
+    labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
+  theme_classic() +
   scale_y_continuous(trans = "logit",
-                     breaks = y_ticks, labels = y_ticks, minor_breaks = NULL) +
+    breaks = y_ticks, labels = y_ticks, minor_breaks = NULL) +
   scale_x_continuous(trans = "logit",
-                     breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) +
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10), legend.position = "bottom",
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))
+    axis.title.x = element_text(size = 12),
+    axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
+    legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))
+p
 ```
 
 
 Again we can compute the average drop in perceived confidence when moving from $p = 0.04$ to $p=0.06$:
 
-```{r drop2}
-dc <- combinations_exp2 %>%
-  filter(true_p == "0.04" | true_p == "0.06")
-f_mu_exp2 <- fitted(fit_exp2, newdata = dc, 
-                    re_formula = NA, summary = FALSE)
-
-d <- data.frame(value = c(f_mu_exp2), 
-                p = rep(dc$true_p, each = nrow(f_mu_exp2)),
-                viz = rep(dc$viz, each = nrow(f_mu_exp2)),
-                iter = 1:nrow(f_mu_exp2))
-
+```{r drop2, cache=TRUE}
 d %>% group_by(viz, iter) %>% 
   summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
   summarise(mean = mean(difference), sd = sd(difference),
-      "2.5%" = quantile(difference, 0.025), 
-      "97.5" = quantile(difference, 0.975))
-
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5" = quantile(difference, 0.975))
 ```
 
-There is a peculiar rise in confidence level in case of continuous Violin CI when the underlying $p$-value is 0.05, but overall, compared to the first experiment the results here do not show strong differences in cliff effect or dichotomous thinking, and actually is no clear signs of these phenomena in this experiment.
+There is a peculiar rise in confidence level in case of continuous Violin CI when the underlying $p$-value is 0.05, but overall, compared to the first experiment the results here do not show strong differences in cliff effect or dichotomous thinking, and actually is no clear signs of these phenomena in this experiment:
+
+```{r, cache=TRUE}
+p <- d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>% 
+  ggplot(aes(x = difference, fill = viz, colour = viz)) + 
+  geom_density(bw = 0.01, alpha = 0.6) +
+  theme_classic() + 
+  scale_fill_manual("Representation", 
+    values = cols[2:5],
+    labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
+  scale_colour_manual("Representation", 
+    values = cols[2:5],
+    labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) + 
+  ylab("Posterior density") + 
+  xlab("Cliff effect") +
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14)) 
+p 
+```
+
+```{r, echo = FALSE, eval = FALSE}
+ggsave(p, filename = "experiment2/results/exp2_cliff.pdf", 
+  width = 2*8.5, height = 6, 
+  unit = "cm", device = "pdf")
+```
+
+```{r, cache=TRUE}
+postprob <- d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  group_by(iter) %>% 
+  mutate(ci_vs_gradient = difference[viz == "CI"] - difference[viz == "Gradient"],
+    ci_vs_cviolin = difference[viz == "CI"] - difference[viz == "Continuous Violin"],
+    ci_vs_dviolin = difference[viz == "CI"] - difference[viz == "Discrete Violin"],
+    gradient_vs_cviolin = difference[viz == "Gradient"] - 
+      difference[viz == "Continuous Violin"],
+    gradient_vs_dviolin = difference[viz == "Gradient"] - difference[viz == "Discrete Violin"],
+    cviolin_vs_dviolin = difference[viz == "Continuous Violin"] - 
+      difference[viz == "Discrete Violin"]) %>%
+  ungroup() %>% summarise(
+    "P(CI > gradient)" = mean(ci_vs_gradient > 0),
+    "P(CI > cviolin)" = mean(ci_vs_cviolin > 0),
+    "P(CI > dviolin)" = mean(ci_vs_dviolin > 0),
+    "P(gradient > cont violin)" = mean(gradient_vs_cviolin > 0),
+    "P(gradient > disc violin)" = mean(gradient_vs_dviolin > 0),
+    "P(cont violin > disc violin)" = mean(cviolin_vs_dviolin > 0))
+round(t(as.data.frame(postprob)), 2)
+```
 
 
 ### Subjective rankings for second experiment
 
 Read the data:
-```{r create_rankdata_exp2}
+```{r create_rankdata_exp2, eval = FALSE, cache=TRUE}
 path <- "experiment2/data"
 files <- list.files(path, pattern = "subjective", full.names = TRUE)
 n <- length(files)
 rankdata2 <- data.frame(id = rep(1:n, each = 4),
-                        viz = factor(rep(c("violin2", "ci", "violin", "gradient")), 
-                                     levels = c("violin2", "ci", "violin", "gradient")),
-                        rank = factor(NA, levels = 1:4))
+  viz = factor(rep(c("violin2", "ci", "violin", "gradient")), 
+    levels = c("violin2", "ci", "violin", "gradient")),
+  rank = factor(NA, levels = 1:4))
 for(i in 1:n) {
   fb <- fromJSON(files[i])
   rankdata2$id[4*(i-1) + 1:4] <- strsplit(strsplit(files[i], "subjective")[[1]], ".txt")[[2]]
   rankdata2$rank[4*(i-1) + 1:4] <- factor(fb$rank)
 }
 rankdata2$viz <- recode_factor(rankdata2$viz, "ci" = "CI", 
-                               "gradient" = "Gradient", 
-                               "violin" = "Continuous Violin", 
-                               "violin2" = "Discrete Violin")
+  "gradient" = "Gradient", 
+  "violin" = "Continuous Violin", 
+  "violin2" = "Discrete Violin")
 rankdata2$viz <- relevel(rankdata2$viz, "CI")
 rankdata2$rank <- factor(rankdata2$rank, ordered = TRUE)
 rankdata2$id <- factor(rankdata2$id, levels = levels(data2$id))
 ranks_exp2 <- distinct(inner_join(rankdata2, data2[, c("id", "viz", "expertise")]))
 ```
-
-And fit the same models as in the first experiment:
-```{r fit_rankmodel_exp2, cache = TRUE}
-fit_rank21 <- brm(rank ~ viz * expertise + (1 | id), family = cumulative, 
-                  data = ranks_exp2, refresh = 0)
-fit_rank22 <- brm(rank ~ viz + (1 | id), family = cumulative, 
-                  data = ranks_exp2, refresh = 0)
+```{r, echo=FALSE, cache = TRUE}
+ranks_exp2 <- readRDS("experiment2/data/exp2_rankdata.rds")
+fit_rank21 <- readRDS("experiment2/results/fit_rank21.rds")
+fit_rank22 <- readRDS("experiment2/results/fit_rank22.rds")
 ```
 
-Let's run approximate leave-one-out CV for these models (due to warnings from `loo` we use option `reloo` in the first call which re-estimates the model multiple times leaving three problemtatic observations out of the data one at the time):
+And fit the same models as in the first experiment:
+```{r fit_rankmodel_exp2, cache = TRUE, eval = FALSE}
+fit_rank21 <- brm(rank ~ viz * expertise + (1 | id), family = cumulative, 
+  data = ranks_exp2, refresh = 0)
+fit_rank22 <- brm(rank ~ viz + (1 | id), family = cumulative, 
+  data = ranks_exp2, refresh = 0)
+saveRDS(fit_rank21, file = "experiment2/results/fit_rank21.rds")
+saveRDS(fit_rank22, file = "experiment2/results/fit_rank22.rds")
+```
+
+Let's run approximate leave-one-out CV for these models (due to warnings from `loo` we use option `moment_match` in the first call):
 ```{r loo_exp2, cache = TRUE}
-
-fit_rank21 <- add_criterion(fit_rank21, "loo", reloo = TRUE) # reloo due to warning
+fit_rank21 <- add_criterion(fit_rank21, "loo", moment_match = TRUE) # reloo due to warning
 fit_rank22 <- add_criterion(fit_rank22, "loo")
-
 loo_compare(fit_rank21, fit_rank22)
 ```
 
 Again, we use simpler model:
-```{r rankmodel_exp2_results}
+```{r rankmodel_exp2_results, cache=TRUE}
 fit_rank2 <- fit_rank22
 fit_rank2
 ```
 
 And finally the ranking probabilities:
-```{r rankmodel_exp2_plot}
-effects_exp2 <- marginal_effects(fit_rank2, effects = "viz", plot = FALSE, categorical = TRUE, 
-                                 reformula=NA)
+```{r rankmodel_exp2_plot, cache=TRUE}
+effects_exp2 <- conditional_effects(fit_rank2, effects = "viz", 
+  plot = FALSE, categorical = TRUE, 
+  reformula=NA)
 
-ggplot(effects_exp2[[1]], aes(x=viz, y = estimate__, colour = cats__)) + 
+p <- ggplot(effects_exp2[[1]], aes(x = viz, y = estimate__, colour = cats__)) + 
   geom_point(position=position_dodge(0.5)) + 
-  geom_errorbar(width=0.25, aes(ymin=lower__, ymax = upper__),position=position_dodge(0.5)) + 
-  theme_bw() + 
+  geom_errorbar(width=0.25, aes(ymin=lower__, ymax = upper__), 
+    position = position_dodge(0.5)) + 
+  theme_classic() + 
   ylab("Ranking probability") + xlab("Representation") +
-  scale_x_discrete(labels = c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) +
-  scale_color_discrete("Rank", 
-                       labels = c("1 (best)", "2", "3", "4 (worst)")) + 
-  theme(axis.text.x = element_text(size = 10), legend.position = "bottom", 
-        axis.title.x = element_text(size = 12),
-        axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
-        legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))
+  scale_x_discrete(labels = 
+      c("CI", "Gradient CI", "Cont. Violin CI", "Disc. Violin CI")) +
+  scale_color_manual("Rank", 
+    values = colsrank,
+    labels = c("1 (best)", "2", "3", "4 (worst)")) + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12,hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14)) 
+```
+```{r, eval = FALSE, echo = FALSE}
+ggsave(p, file="experiment2/results/ranks2.pdf",  
+       width = 2*8.5, height = 6, 
+       unit = "cm", device = "pdf")
 ```
 
 Preferences between different techniques seem to be quite similar, except there seems to be preferences towards discrete Violin CI plot.

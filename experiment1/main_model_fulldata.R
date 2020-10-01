@@ -5,8 +5,9 @@ library(ggplot2)
 library(dplyr)
 library(magrittr)
 rstan_options(auto_write = TRUE)
+Sys.setenv(LOCAL_CPPFLAGS = '-march=native')
 
-data <- readRDS("experiment1/data/exp1_data.rds")
+data <- readRDS("data/exp1_data.rds")
 
 data %>% group_by(id, viz) %>% 
   summarize(diff = confidence[true_p==0.06] - confidence[true_p==0.04])  %>% 
@@ -146,8 +147,8 @@ logit_p_gaussian <- custom_family(
   lb = c(NA, 0, 0, 0), ub = c(NA, NA, 1, 1),
   type = "real", 
   log_lik = log_lik_logit_p_gaussian,
-  posterior_predict = predict_logit_p_gaussian,
-  posterior_epred = fitted_logit_p_gaussian)
+  predict = predict_logit_p_gaussian,
+  fitted = fitted_logit_p_gaussian)
 
 
 data <- data %>% 
@@ -159,6 +160,7 @@ data <- data %>%
 
 # base model, allow varying main effects per individual
 # no varying effect for p = 0.05 due to small number of observations
+
 fit1 <- brm(bf(
   confidence ~ 
     viz * p_lt0.05 * logit_p + 
@@ -214,6 +216,7 @@ fit3 <- brm(bf(
   cores = 2, refresh = 10)
 
 saveRDS(fit3, file="results/fit3.rds")
+
 
 # add varying interactions to mu
 fit4 <- brm(bf(
@@ -355,3 +358,6 @@ loo::compare(kfold1,kfold2,kfold3,kfold4,kfold5,kfold6,kfold7,kfold8)
 # kfold7   -92.2      12.0 -7664.7         NA
 # kfold4   -94.6       7.9 -7667.2         NA
 # kfold5   -99.9      12.1 -7672.5         NA
+
+library(performance)
+icc(fit)
