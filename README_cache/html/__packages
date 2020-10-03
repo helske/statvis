@@ -1,9 +1,0 @@
-base
-Rcpp
-brms
-modelr
-ggplot2
-dplyr
-magrittr
-jsonlite
-loo
