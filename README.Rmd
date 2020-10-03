@@ -1,7 +1,7 @@
 ---
 title: "Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference"
 author: "Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, Lonni Besançon"
-date: "22/09/2020"
+date: "3/10/2020"
 output: 
   html_document:
     keep_md: true
@@ -16,6 +16,8 @@ knitr::opts_chunk$set(echo = TRUE, width = 150)
 # What is this
 
 This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon. 
+
+The raw data for both experiments can be found in folders `experiment1/data/` and `experiment2/data/` respectively, which also contains the R data frames used in the analysis (`exp1_data.rds` and `exp2_data.rds`). The web pages for the surveys are in folder `web`, with some screenshots in folder `screenshots`.
 
 ## One-sample experiment
 
@@ -461,7 +463,7 @@ d <- data.frame(value = c(f_mu_exp1),
 levels(d$viz) <- c("Textual", "Classic CI", "Gradient CI", "Violin CI")
 ```
 
-```{r, cache = TRUE}
+```{r posterior_curves_exp1, cache = TRUE}
 sumr <- d %>% group_by(viz, p) %>%
   summarise(Estimate = mean(value), 
     Q2.5 = quantile(value, 0.025), 
@@ -605,7 +607,7 @@ p
 ```
 ```{r, echo = FALSE, eval = TRUE}
 ggsave(p, filename = "experiment1/results/exp1_cliff.pdf", 
-  width = 2*8.5, height = 6, 
+  width = 2*8.5, height = 6.5, 
   unit = "cm", device = "pdf")
 ```
 
@@ -677,7 +679,7 @@ levels(d$viz) <- c("Textual", "Classic CI", "Gradient CI", "Violin CI")
 ```
 
 Here are posterior curves for the four different groups:
-```{r 'posterior_curves_exp1', cache = TRUE}
+```{r 'posterior_curves_exp1_expertise', cache = TRUE}
 sumr <- d %>% group_by(viz, p, expertise) %>%
   summarise(Estimate = mean(value), 
     Q2.5 = quantile(value, 0.025), 
@@ -931,7 +933,7 @@ There are some differences between confidence curves between groups: In Physical
 
 We can also draw same figure when averaging over the groups:
 
-```{r posterior_curves_exp1, cache = TRUE}
+```{r posterior_curves_exp1_marginal, cache = TRUE}
 sumr <- d %>% group_by(viz, p) %>%
   summarise(Estimate = mean(value), 
     Q2.5 = quantile(value, 0.025), 
@@ -1547,7 +1549,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) +
     xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 p
 ```
-```{r, echo = FALSE, eval = FALSE}
+```{r, echo = FALSE, eval = TRUE}
 ggsave(p, filename = "experiment2/results/exp2_confidence.pdf", 
   width = 2*8.5, height = 12.5, 
   unit = "cm", device = "pdf")
@@ -1617,9 +1619,9 @@ p <- d %>% group_by(viz, iter) %>%
 p 
 ```
 
-```{r, echo = FALSE, eval = FALSE}
+```{r, echo = FALSE, eval = TRUE}
 ggsave(p, filename = "experiment2/results/exp2_cliff.pdf", 
-  width = 2*8.5, height = 6, 
+  width = 2*8.5, height = 6.5, 
   unit = "cm", device = "pdf")
 ```
 
