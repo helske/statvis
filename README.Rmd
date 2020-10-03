@@ -554,7 +554,7 @@ df_01_exp1 <- data.frame(
   viz = comb_exp1$viz, 
   f_zoi_exp1_sumr)
 levels(df_01_exp1$viz) <- 
-  c("p-value", "CI", "Gradient CI", "Violin CI")
+  c("Textual", "Classic CI", "Gradient CI", "Violin CI")
 y_ticks <- c(0.0001, 0.01, seq(0.1,0.9,by=0.2))
 
 p <- df_01_exp1 %>% 
@@ -923,10 +923,12 @@ p4 <- p14 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) +
     ggplotGrob(p24), 
     xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 
+
 library(patchwork)
-(p1 + ggtitle("Stats/ML")) + (p2 + ggtitle("VIS/HCI")) + 
+p <- (p1 + ggtitle("Stats/ML")) + (p2 + ggtitle("VIS/HCI")) + 
   (p3 + ggtitle("Social sciences and humanities")) + 
   (p4 + ggtitle("Physical and life sciences"))
+p
 ```
 
 
@@ -999,6 +1001,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) +
     ggplotGrob(p2), 
     xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 p
+
 ```
 ```{r, echo = FALSE, eval = TRUE}
 ggsave(p, filename = "experiment1/results/exp1_confidence_marginal.pdf", 
@@ -1550,6 +1553,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) +
     ggplotGrob(p2), 
     xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 p
+
 ```
 ```{r, echo = FALSE, eval = TRUE}
 ggsave(p, filename = "experiment2/results/exp2_confidence.pdf", 
@@ -1586,6 +1590,7 @@ p <- df_01_exp2 %>%
     axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
     legend.text=element_text(size = 10), strip.text.x = element_text(size = 10))
 p
+
 ```
 
 
@@ -1619,6 +1624,7 @@ p <- d %>% group_by(viz, iter) %>%
     axis.title.y = element_text(size = 14),
     legend.text = element_text(size = 14)) 
 p 
+
 ```
 
 ```{r, echo = FALSE, eval = TRUE}

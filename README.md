@@ -13,7 +13,6 @@ output:
 
 # What is this
 
-
 This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon. 
 
 The raw data for both experiments can be found in folders `experiment1/data/` and `experiment2/data/` respectively, which also contains the R data frames used in the analysis (`exp1_data.rds` and `exp2_data.rds`). The web pages for the surveys are in folder `web`, with some screenshots in folder `screenshots`.
@@ -60,6 +59,7 @@ for(i in 1:n){
       dem[c("expertise", "level", "age", "experience", "tools")]
   }
 }
+saveRDS(data_raw, file = "experiment1/data/data_raw.rds")
 # remove person who didn't answer reasonably on the demography part
 # Degree is None and more importantly expertise is 1..?
 data <- data_raw[data_raw$degree != "None",]
@@ -1015,7 +1015,7 @@ df_01_exp1 <- data.frame(
   viz = comb_exp1$viz, 
   f_zoi_exp1_sumr)
 levels(df_01_exp1$viz) <- 
-  c("p-value", "CI", "Gradient CI", "Violin CI")
+  c("Textual", "Classic CI", "Gradient CI", "Violin CI")
 y_ticks <- c(0.0001, 0.01, seq(0.1,0.9,by=0.2))
 
 p <- df_01_exp1 %>% 
@@ -1035,10 +1035,6 @@ p <- df_01_exp1 %>%
     axis.text.y = element_text(size = 10), axis.title.y = element_text(size = 12),
     legend.text=element_text(size = 10), strip.text.x = element_text(size = 10)) 
 p
-```
-
-```
-## Warning: Removed 16 row(s) containing missing values (geom_path).
 ```
 
 ![](README_files/figure-html/extreme_exp1_plot-1.png)<!-- -->
@@ -1440,10 +1436,12 @@ p4 <- p14 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) +
     ggplotGrob(p24), 
     xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 
+
 library(patchwork)
-(p1 + ggtitle("Stats/ML")) + (p2 + ggtitle("VIS/HCI")) + 
+p <- (p1 + ggtitle("Stats/ML")) + (p2 + ggtitle("VIS/HCI")) + 
   (p3 + ggtitle("Social sciences and humanities")) + 
   (p4 + ggtitle("Physical and life sciences"))
+p
 ```
 
 ![](README_files/figure-html/posterior_curves_exp1_expertise-1.png)<!-- -->
@@ -1900,6 +1898,7 @@ for(i in 1:n){
       dem[c("expertise", "level", "age", "experience", "tools")]
   }
 }
+saveRDS(data_raw, file = "experiment2/data/data_raw.rds")
 # remove person who didn't answer on the demography part
 data_raw <- data_raw[data_raw$expertise != "",]
 
