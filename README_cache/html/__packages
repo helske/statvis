@@ -7,3 +7,5 @@ dplyr
 magrittr
 jsonlite
 loo
+ggthemes
+patchwork
