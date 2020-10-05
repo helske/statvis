@@ -10,7 +10,6 @@ output:
     fig_height: 12
     toc: true
     toc_depth: 3
-    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -270,12 +269,15 @@ Stats/ML and VIS/HCI groups tend to give slightly more extreme answers, but diff
 
 For modelling the data and the potential cliff effect we use piece-wise logit-normal model with following pdf:
 
+
 $$
+
 p(x)=\begin{cases}
 \alpha (1 - \gamma), & \text{if $x = 0$},\\
 \alpha \gamma, & \text{if $x = 1$},\\
-(1 - \alpha) \phi(\logit(x), \mu, \sigma), & \text{otherwise}.\\
+(1 - \alpha) \phi(logit(x), \mu, \sigma), & \text{otherwise}.\\
 \end{cases}
+
 $$
 
 Here $\alpha = P(x \in \{0, 1\})$ is the probability of answering one of the extreme values (not at all confident or fully confident), and $\gamma = P(x = 1 \mid x \in \{0, 1\})$, is the conditional probability of full confidence given that the answer is one of the extremes.
@@ -541,7 +543,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) +
     xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
 p
 ```
-```{r, echo = FALSE, eval = TRUE}
+```{r, echo = FALSE, eval = FALSE}
 ggsave(p, filename = "experiment1/results/exp1_confidence.pdf", 
   width = 2*8.5, height = 12.5, 
   unit = "cm", device = "pdf")
@@ -611,7 +613,7 @@ p <- d %>% group_by(viz, iter) %>%
     legend.text = element_text(size = 14)) 
 p
 ```
-```{r, echo = FALSE, eval = TRUE}
+```{r, echo = FALSE, eval = FALSE}
 ggsave(p, filename = "experiment1/results/exp1_cliff.pdf", 
   width = 2*8.5, height = 6.5, 
   unit = "cm", device = "pdf")
@@ -1008,7 +1010,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) +
 p
 
 ```
-```{r, echo = FALSE, eval = TRUE}
+```{r, echo = FALSE, eval = FALSE}
 ggsave(p, filename = "experiment1/results/exp1_confidence_marginal.pdf", 
   width = 2*8.5, height = 12.5, 
   unit = "cm", device = "pdf")
@@ -1324,7 +1326,7 @@ p <- ggplot(effects_exp1[[1]], aes(x = viz, y = estimate__, colour = cats__)) +
     legend.text = element_text(size = 14)) 
 p
 ```
-```{r, eval = TRUE, echo = FALSE}
+```{r, eval = FALSE, echo = FALSE}
 ggsave(p, file="experiment1/results/ranks1.pdf",  
   width = 2*8.5, height = 6, 
   unit = "cm", device = "pdf")
@@ -1669,7 +1671,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) +
 p
 
 ```
-```{r, echo = FALSE, eval = TRUE}
+```{r, echo = FALSE, eval = FALSE}
 ggsave(p, filename = "experiment2/results/exp2_confidence.pdf", 
   width = 2*8.5, height = 12.5, 
   unit = "cm", device = "pdf")
@@ -1741,7 +1743,7 @@ p
 
 ```
 
-```{r, echo = FALSE, eval = TRUE}
+```{r, echo = FALSE, eval = FALSE}
 ggsave(p, filename = "experiment2/results/exp2_cliff.pdf", 
   width = 2*8.5, height = 6.5, 
   unit = "cm", device = "pdf")
