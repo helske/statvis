@@ -570,7 +570,7 @@ fit_exp1 <- brm(bf(
   data = data,
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
-  chains = 4, chains = 4, iter = 2000, init = 0, 
+  chains = 4, cores = 4, iter = 2000, init = 0, 
   save_warmup = FALSE, save_all_pars = TRUE, refresh = 0)
 ```
 
@@ -1756,51 +1756,187 @@ data %>% group_by(id, viz, expertise) %>%
 ## 4 violin             0.02
 ```
 
-<!-- Finally, we can check the mean absolute difference in confidence between $p=0.04$ and $p=0.06$: -->
-<!-- ```{r, cache = TRUE} -->
-<!-- data %>% group_by(expertise, viz, iter) %>%  -->
-<!--   summarise(difference = abs(confidence[p == "0.04"] - confidence[p == "0.06"])) %>% -->
-<!--   summarise(mean = mean(difference), sd = sd(difference), -->
-<!--     "2.5%" = quantile(difference, 0.025),  -->
-<!--     "97.5" = quantile(difference, 0.975)) -->
-<!-- ``` -->
+
+### Reanalysis with cleaned data
+
+Finally we test how does the results depend on those confidence curves which have clearly positive slope or large increases in confidence when $p$-value increases.
+
+We use simple linear model with logit-transformed $p$-value and trimmed logit-transformed confidence, and check whether the corresponding coefficient is clearly positive (arbitrarily chose as 0.1), and in addition to this we remove those curves where the difference between two consecutive confidence values are larger than 0.2 (this should of course be negative):
+
+
+```r
+data <- readRDS("experiment1/data/exp1_data.rds")
+outliers_slope <- data %>% group_by(id, viz) %>%
+  mutate(p_logit = qlogis(p), c_logit = qlogis(
+    ifelse(confidence == 0, 0.001, ifelse(confidence == 1, 0.999, confidence)))) %>%
+  summarize(
+    slope = coef(lm(c_logit ~ p_logit))[2]) %>%
+  filter(slope > 0.1)
+
+outliers_diff <- data %>% group_by(id, viz) %>% 
+  arrange(p, .by_group = TRUE) %>%
+  mutate(diff = c(0,diff(confidence)), neg_diff = any(diff > 0.2)) %>%
+  filter(neg_diff)
+
+data_cleaned <- data %>%
+  filter(!(interaction(id,viz) %in% 
+      interaction(outliers_slope$id, outliers_slope$viz))) %>%
+  filter(!(interaction(id,viz) %in% 
+      interaction(outliers_diff$id, outliers_diff$viz))) 
+
+data_cleaned <- data_cleaned %>% 
+  mutate(
+    logit_p = qlogis(p),
+    p_lt0.05 = factor(p < 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
+    p_eq0.05 = factor(p == 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
+    cat_p = recode_factor(true_p, 
+      "0.06" = ">0.05", "0.1" = ">0.05", "0.5" = ">0.05", "0.8" = ">0.05",
+      .ordered = TRUE))
+
+fit_exp1 <- brm(bf(
+  confidence ~ 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 * logit_p + p_eq0.05 | id),
+  zoi ~ 
+    viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data_cleaned,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, cores = 4, iter = 2000, init = 0, 
+  save_warmup = FALSE, refresh = 0)
+```
 
 
 
-<!-- ## Reanalysis with cleaned data -->
 
-<!-- Let's remove those confidence curves which have clearly (> 0.1) positive slope (when using simple linear model with logit-transformed $p$-value and trimmed and logit-transformed confidence): -->
-<!-- ```{r} -->
-<!-- outliers <- data %>% group_by(id, viz) %>% -->
-<!--   mutate(p_logit = qlogis(p), c_logit = qlogis( -->
-<!--     ifelse(confidence == 0, 0.001, ifelse(confidence == 1, 0.999, confidence)))) %>% -->
-<!--   summarize( -->
-<!--     slope = coef(lm(c_logit ~ p_logit))[2]) %>% -->
-<!--   filter(slope > 0.1) -->
+```r
+comb_exp1 <- fit_exp1$data %>% 
+  data_grid(viz, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %>% 
+  filter(interaction(logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %in% 
+      unique(interaction( 
+        fit_exp1$data$logit_p, fit_exp1$data$p_lt0.05, 
+        fit_exp1$data$p_eq0.05, fit_exp1$data$cat_p, 
+        fit_exp1$data$true_p)))
 
-<!-- # even more strict, consider only slope around p=0.05 -->
-<!-- # outliers <- data %>% filter(p>0.01 & p < 0.5) %>% group_by(id, viz) %>% -->
-<!-- #     mutate(p_logit = qlogis(p), c_logit = qlogis( -->
-<!-- #         ifelse(confidence == 0, 0.001, ifelse(confidence == 1, 0.999, confidence)))) %>% -->
-<!-- #     summarize( -->
-<!-- #         slope = coef(lm(c_logit ~ p_logit))[2]) %>% -->
-<!-- #     filter(slope > 0.1) -->
+f_mu_exp1 <- posterior_epred(fit_exp1, newdata = comb_exp1, re_formula = NA)
 
-<!-- n_out <- nrow(outliers) -->
+d <- data.frame(value = c(f_mu_exp1), 
+  p = rep(comb_exp1$true_p, each = nrow(f_mu_exp1)),
+  viz = rep(comb_exp1$viz, each = nrow(f_mu_exp1)),
+  iter = 1:nrow(f_mu_exp1))
+levels(d$viz) <- c("Textual", "Classic CI", "Gradient CI", "Violin CI")
 
-<!-- data %>% -->
-<!--   filter((interaction(id,viz) %in% interaction(outliers$id, outliers$viz))) %>% -->
-<!--   ggplot(aes(x = p, y = confidence, group = id, colour = id)) + -->
-<!--   geom_line() + -->
-<!--   geom_point() + -->
-<!--   theme_bw() + -->
-<!--   facet_wrap(~ viz) -->
-<!-- ``` -->
-<!-- ```{r} -->
-<!-- data_cleaned <- data %>% filter(!(id %in% outliers$id)) -->
-<!-- ``` -->
+sumr <- d %>% group_by(viz, p) %>%
+  summarise(Estimate = mean(value), 
+    Q2.5 = quantile(value, 0.025), 
+    Q97.5 = quantile(value, 0.975)) %>%
+  mutate(p = as.numeric(levels(p))[p])
+```
+
+```
+## `summarise()` regrouping output by 'viz' (override with `.groups` argument)
+```
+
+```r
+cols <- c("Textual" = "#D55E00", "Classic CI" = "#0072B2", 
+  "Gradient CI" = "#009E73", "Violin CI" = "#CC79A7")
+x_ticks <- c(0.001, 0.01, 0.04, 0.06, 0.1, 0.5, 0.8)
+y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
+dodge <- 0.19
+
+p1 <- sumr %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, 
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.1, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
 
 
+p2 <- sumr %>% filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) + 
+  annotation_custom(
+    ggplotGrob(p2), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+p
+```
+
+![](README_files/figure-html/cleaned_curves-1.png)<!-- -->
+
+```r
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5" = quantile(difference, 0.975))
+```
+
+```
+## `summarise()` regrouping output by 'viz' (override with `.groups` argument)
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+## # A tibble: 4 x 5
+##   viz          mean     sd `2.5%` `97.5`
+##   <fct>       <dbl>  <dbl>  <dbl>  <dbl>
+## 1 Textual     0.260 0.0265  0.209  0.311
+## 2 Classic CI  0.316 0.0246  0.269  0.365
+## 3 Gradient CI 0.166 0.0249  0.117  0.214
+## 4 Violin CI   0.175 0.0227  0.131  0.220
+```
+
+Overall, the results are in line with the analysis of to full data, except that the average $\delta$ is larger in all groups.
+    
 ### Subjective rankings of the representation styles
 
 Now we focus on analysis the subjective rankings of the technique. Read the feedback data and merge it with the previous data which contains the expertise information: 
@@ -2227,7 +2363,7 @@ fit_exp2 <- brm(bf(
   data = data2,
   family = logit_p_gaussian,
   stanvars = stanvar(scode = stan_funs, block = "functions"),
-  chains = 4, chains = 4, iter = 2000, init = 0, 
+  chains = 4, cores = 4, iter = 2000, init = 0, 
   save_warmup = FALSE, save_all_pars = TRUE, refresh = 0)
 ```
 
@@ -2686,7 +2822,7 @@ p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) +
 p
 ```
 
-![](README_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](README_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
 
 
 
@@ -2782,7 +2918,7 @@ p <- d %>% group_by(viz, iter) %>%
 p 
 ```
 
-![](README_files/figure-html/unnamed-chunk-26-1.png)<!-- -->
+![](README_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 
 
@@ -2830,7 +2966,538 @@ round(t(as.data.frame(postprob)), 2)
 ## P(cont violin > disc violin) 0.02
 ```
 
+### Results for the model with expertise
 
+Now we consider expanded model with with expertise as predictor:
+
+
+```r
+fit_expertise <- brm(bf(
+  confidence ~ 
+    expertise * viz * p_lt0.05 * logit_p + 
+    expertise * viz * p_eq0.05 +
+    (viz + p_lt0.05 * logit_p + p_eq0.05 | id),
+  zoi ~ 
+    expertise * viz + viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ expertise * viz + (1 | id)),
+  data = data2,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, cores = 4, iter = 2000, init = 0, 
+  save_warmup = FALSE, save_all_pars = TRUE, refresh = 0)
+```
+
+
+```r
+comb_exp2 <- fit_expertise$data %>% 
+  data_grid(expertise, viz, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %>% 
+  filter(interaction(expertise, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %in% 
+      unique(interaction(fit_expertise$data$expertise, 
+        fit_expertise$data$logit_p, fit_expertise$data$p_lt0.05, 
+        fit_expertise$data$p_eq0.05, fit_expertise$data$cat_p, 
+        fit_expertise$data$true_p)))
+
+f_mu_exp2 <- posterior_epred(fit_expertise, newdata = comb_exp2, re_formula = NA)
+
+d <- data.frame(value = c(f_mu_exp2), 
+  p = rep(comb_exp2$true_p, each = nrow(f_mu_exp2)),
+  viz = rep(comb_exp2$viz, each = nrow(f_mu_exp2)),
+  expertise = rep(comb_exp2$expertise, each = nrow(f_mu_exp2)),
+  iter = 1:nrow(f_mu_exp2))
+
+levels(d$viz) <- c("Classic CI", "Gradient CI", "Cont. violin CI", "Disc. violin CI")
+cols  <- c("Classic CI" = "#0072B2", 
+  "Gradient CI" = "#009E73", "Cont. violin CI" = "#CC79A7",
+  "Disc. violin CI" = "#E69F00")
+```
+
+Here are posterior curves for the four different groups:
+
+```r
+sumr <- d %>% group_by(viz, p, expertise) %>%
+  summarise(Estimate = mean(value), 
+    Q2.5 = quantile(value, 0.025), 
+    Q97.5 = quantile(value, 0.975)) %>%
+  mutate(p = as.numeric(levels(p))[p])
+```
+
+```
+## `summarise()` regrouping output by 'viz', 'p' (override with `.groups` argument)
+```
+
+```r
+x_ticks <- c(0.001, 0.01, 0.04, 0.06, 0.1, 0.5, 0.8)
+y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
+dodge <- 0.19
+
+p11 <- sumr %>% filter(expertise == "Stats/ML") %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, 
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.margin = margin(t = -0.1, b = 0, unit = "cm"),
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), 
+    ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) 
+
+
+p21 <- sumr %>% filter(expertise == "Stats/ML") %>% 
+  filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+yrange <- c(min(sumr$Q2.5)-0.001, max(sumr$Q97.5) +0.001)
+p1 <- p11 + coord_cartesian(xlim = c(0.001, 0.9), 
+  ylim = yrange) + 
+  annotation_custom(
+    ggplotGrob(p21), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+
+p12 <- sumr %>% filter(expertise == "VIS/HCI") %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) 
+
+
+p22 <- sumr %>% filter(expertise == "VIS/HCI") %>% 
+  filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+   scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+p2 <- p12 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) + 
+  annotation_custom(
+    ggplotGrob(p22), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+
+p13 <- sumr %>% filter(expertise == "Social science and humanities") %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) 
+
+
+p23 <- sumr %>% filter(expertise == "Social science and humanities") %>% 
+  filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+p3 <- p13 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) + 
+  annotation_custom(
+    ggplotGrob(p23), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+
+
+p14 <- sumr %>% filter(expertise == "Physical and life sciences") %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, margin = margin(t = -0.1, r = 0, b = -0.3, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5))) 
+
+
+p24 <- sumr %>% filter(expertise == "Physical and life sciences") %>% 
+  filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+p4 <- p14 + coord_cartesian(xlim = c(0.001, 0.9), ylim = yrange) + 
+  annotation_custom(
+    ggplotGrob(p24), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+
+
+library(patchwork)
+p <- (p1 + ggtitle("Stats/ML")) + (p2 + ggtitle("VIS/HCI")) + 
+  (p3 + ggtitle("Social sciences and humanities")) + 
+  (p4 + ggtitle("Physical and life sciences"))
+p
+```
+
+![](README_files/figure-html/posterior_curves_exp2_expertise-1.png)<!-- -->
+
+And the expertise-specific cliff effects:
+
+```r
+d %>% group_by(expertise, viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5" = quantile(difference, 0.975))
+```
+
+```
+## `summarise()` regrouping output by 'expertise', 'viz' (override with `.groups` argument)
+```
+
+```
+## `summarise()` regrouping output by 'expertise' (override with `.groups` argument)
+```
+
+```
+## # A tibble: 16 x 6
+## # Groups:   expertise [4]
+##    expertise                     viz                 mean     sd   `2.5%` `97.5`
+##    <fct>                         <fct>              <dbl>  <dbl>    <dbl>  <dbl>
+##  1 Stats/ML                      Classic CI       0.114   0.0451  0.0258  0.205 
+##  2 Stats/ML                      Gradient CI      0.0348  0.0470 -0.0598  0.127 
+##  3 Stats/ML                      Cont. violin CI -0.00825 0.0605 -0.128   0.111 
+##  4 Stats/ML                      Disc. violin CI  0.0245  0.0567 -0.0865  0.137 
+##  5 VIS/HCI                       Classic CI       0.0697  0.0809 -0.0864  0.230 
+##  6 VIS/HCI                       Gradient CI      0.00573 0.102  -0.165   0.230 
+##  7 VIS/HCI                       Cont. violin CI -0.00512 0.0967 -0.191   0.187 
+##  8 VIS/HCI                       Disc. violin CI  0.117   0.0943 -0.0682  0.303 
+##  9 Social science and humanities Classic CI       0.116   0.0610  0.00303 0.237 
+## 10 Social science and humanities Gradient CI      0.0254  0.0512 -0.0705  0.126 
+## 11 Social science and humanities Cont. violin CI -0.0322  0.0585 -0.149   0.0824
+## 12 Social science and humanities Disc. violin CI  0.0810  0.0649 -0.0477  0.210 
+## 13 Physical and life sciences    Classic CI       0.168   0.124  -0.0686  0.429 
+## 14 Physical and life sciences    Gradient CI      0.155   0.122  -0.0403  0.459 
+## 15 Physical and life sciences    Cont. violin CI -0.0252  0.0958 -0.189   0.181 
+## 16 Physical and life sciences    Disc. violin CI  0.113   0.0902 -0.0378  0.307
+```
+
+As with the model without expertise, we see no clear signs of cliff effect here.
+
+### Reanalysis with cleaned data
+
+Finally we again test how does the results depend on those confidence curves which have clearly positive slope or large increases in confidence when $p$-value increases.
+
+We use simple linear model with logit-transformed $p$-value and trimmed logit-transformed confidence, and check whether the corresponding coefficient is clearly positive (arbitrarily chose as 0.1), and in addition to this we remove those curves where the difference between two consecutive confidence values are larger than 0.2 (this should of course be negative):
+
+
+```r
+data <- readRDS("experiment2/data/exp2_data.rds")
+outliers_slope <- data %>% group_by(id, viz) %>%
+  mutate(p_logit = qlogis(p), c_logit = qlogis(
+    ifelse(confidence == 0, 0.001, ifelse(confidence == 1, 0.999, confidence)))) %>%
+  summarize(
+    slope = coef(lm(c_logit ~ p_logit))[2]) %>%
+  filter(slope > 0.1)
+
+outliers_diff <- data %>% group_by(id, viz) %>% 
+  arrange(p, .by_group = TRUE) %>%
+  mutate(diff = c(0,diff(confidence)), neg_diff = any(diff > 0.2)) %>%
+  filter(neg_diff)
+
+data_cleaned <- data %>%
+  filter(!(interaction(id,viz) %in% 
+      interaction(outliers_slope$id, outliers_slope$viz))) %>%
+  filter(!(interaction(id,viz) %in% 
+      interaction(outliers_diff$id, outliers_diff$viz))) 
+
+data_cleaned <- data_cleaned %>% 
+  mutate(
+    logit_p = qlogis(p),
+    p_lt0.05 = factor(p < 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
+    p_eq0.05 = factor(p == 0.05, levels = c(TRUE, FALSE), labels = c("Yes", "No")),
+    cat_p = recode_factor(true_p, 
+      "0.06" = ">0.05", "0.1" = ">0.05", "0.5" = ">0.05", "0.8" = ">0.05",
+      .ordered = TRUE))
+
+fit_exp2 <- brm(bf(
+  confidence ~ 
+    viz * p_lt0.05 * logit_p + 
+    viz * p_eq0.05 +
+    (viz + p_lt0.05 * logit_p + p_eq0.05 | id),
+  zoi ~ 
+    viz * true_p + (viz | id),
+  coi ~ mo(cat_p),
+  sigma ~ viz + (1 | id)),
+  data = data_cleaned,
+  family = logit_p_gaussian,
+  stanvars = stanvar(scode = stan_funs, block = "functions"),
+  chains = 4, cores = 4, iter = 2000, init = 0, 
+  save_warmup = FALSE, refresh = 0)
+```
+
+
+
+```r
+comb_exp2 <- fit_exp2$data %>% 
+  data_grid(viz, logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %>% 
+  filter(interaction(logit_p, p_lt0.05, p_eq0.05, cat_p, true_p) %in% 
+      unique(interaction( 
+        fit_exp2$data$logit_p, fit_exp2$data$p_lt0.05, 
+        fit_exp2$data$p_eq0.05, fit_exp2$data$cat_p, 
+        fit_exp2$data$true_p)))
+
+f_mu_exp2 <- posterior_epred(fit_exp2, newdata = comb_exp2, re_formula = NA)
+
+d <- data.frame(value = c(f_mu_exp2), 
+  p = rep(comb_exp2$true_p, each = nrow(f_mu_exp2)),
+  viz = rep(comb_exp2$viz, each = nrow(f_mu_exp2)),
+  iter = 1:nrow(f_mu_exp2))
+
+levels(d$viz) <- c("Classic CI", "Gradient CI", "Cont. violin CI", "Disc. violin CI")
+
+sumr <- d %>% group_by(viz, p) %>%
+  summarise(Estimate = mean(value), 
+    Q2.5 = quantile(value, 0.025), 
+    Q97.5 = quantile(value, 0.975)) %>%
+  mutate(p = as.numeric(levels(p))[p])
+```
+
+```
+## `summarise()` regrouping output by 'viz' (override with `.groups` argument)
+```
+
+```r
+cols  <- c("Classic CI" = "#0072B2", 
+  "Gradient CI" = "#009E73", "Cont. violin CI" = "#CC79A7",
+  "Disc. violin CI" = "#E69F00")
+x_ticks <- c(0.001, 0.01, 0.04, 0.06, 0.1, 0.5, 0.8)
+y_ticks <- c(0.05, seq(0.1, 0.9, by = 0.1), 0.95)
+dodge <- 0.19
+
+p1 <- sumr %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(dodge), size = 0.1) +
+  geom_linerange(data = sumr %>% filter(p < 0.03 | p > 0.07),
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(dodge), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(dodge), size = 0.7, show.legend = FALSE) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks, 
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = x_ticks, labels = x_ticks, minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "bottom", 
+    legend.title = element_blank(),
+    axis.text.x = element_text(size = 12, angle = 45, hjust = 1, vjust = 1), 
+    axis.text.y = element_text(size = 12),
+    axis.title.x = element_text(size = 14, 
+      margin = margin(t = -0.1, r = 0, b = -0.1, l = 0, unit = "cm")),
+    axis.title.y = element_text(size = 14, 
+      margin = margin(t = 0, r = -0.1, b = 0, l = -0.1, unit = "cm")),
+    legend.text = element_text(size = 14))  + 
+  geom_rect(xmin = qlogis(0.03), xmax = qlogis(0.07), ymin = qlogis(0.31), ymax = qlogis(0.82), 
+    color = "grey70", alpha = 0, linetype = "dashed", size = 0.1) + 
+  guides(colour = guide_legend(override.aes = list(size = 1.5)))
+
+
+p2 <- sumr %>% filter(p > 0.02 & p < 0.09) %>%
+  ggplot(aes(x = p, y = Estimate, colour = viz)) + 
+  geom_line(position = position_dodge(0.1), size = 0.1) +
+  geom_linerange(
+    aes(ymin = Q2.5, ymax = Q97.5), 
+    position = position_dodge(0.1), size = 0.3,
+    show.legend = FALSE) + 
+  geom_point(position = position_dodge(0.1), size = 0.7) +
+  ylab("Confidence") + xlab("p-value") + 
+  scale_color_manual("Representation", values =  cols) + 
+  scale_y_continuous(trans="logit", breaks = y_ticks,
+    minor_breaks = NULL, labels = y_ticks) + 
+  scale_x_continuous(trans="logit",
+    breaks = c(0.04, 0.05, 0.06), 
+    labels = c(0.04, 0.05, 0.06), 
+    minor_breaks = NULL) + 
+  theme_classic() + 
+  theme(legend.position = "none",  
+    axis.title.x = element_blank(), axis.title.y = element_blank(),
+    plot.background = element_blank(),
+    plot.margin=unit(c(-4,-9,0,0), "mm"),
+    axis.text.x = element_text(size = 12), 
+    axis.text.y = element_text(size = 12)) 
+
+p <- p1 + coord_cartesian(xlim = c(0.001, 0.9), ylim = c(0.045, 0.95)) + 
+  annotation_custom(
+    ggplotGrob(p2), 
+    xmin = qlogis(0.2), xmax = qlogis(0.9), ymin = qlogis(0.3), ymax = qlogis(0.95))
+p
+```
+
+![](README_files/figure-html/cleaned_curves2-1.png)<!-- -->
+
+```r
+d %>% group_by(viz, iter) %>% 
+  summarise(difference = value[p == "0.04"] - value[p == "0.06"]) %>%
+  summarise(mean = mean(difference), sd = sd(difference),
+    "2.5%" = quantile(difference, 0.025), 
+    "97.5" = quantile(difference, 0.975))
+```
+
+```
+## `summarise()` regrouping output by 'viz' (override with `.groups` argument)
+```
+
+```
+## `summarise()` ungrouping output (override with `.groups` argument)
+```
+
+```
+## # A tibble: 4 x 5
+##   viz                mean     sd   `2.5%` `97.5`
+##   <fct>             <dbl>  <dbl>    <dbl>  <dbl>
+## 1 Classic CI       0.125  0.0349  0.0555  0.194 
+## 2 Gradient CI      0.0525 0.0315 -0.00810 0.114 
+## 3 Cont. violin CI -0.0153 0.0347 -0.0825  0.0531
+## 4 Disc. violin CI  0.0693 0.0373 -0.00107 0.143
+```
+
+Overall, the results are very similar to the analysis with the full data.
+    
+    
 ### Subjective rankings for second experiment
 
 Read the data:
@@ -2892,7 +3559,10 @@ p <- ggplot(effects_exp2[[1]], aes(x = viz, y = estimate__, colour = cats__)) +
     axis.title.x = element_text(size = 14),
     axis.title.y = element_text(size = 14),
     legend.text = element_text(size = 14)) 
+p
 ```
+
+![](README_files/figure-html/rankmodel_exp2_plot-1.png)<!-- -->
 
 
 Preferences between different techniques seem to be quite similar, except there seems to be preferences towards discrete violin CI plot.
