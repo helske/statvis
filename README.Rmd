@@ -3,9 +3,7 @@ title: "Are You Sure You're Sure? - Effects of Visual Representation on the Clif
 author: "Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, Lonni Besançon"
 date: "3/10/2020"
 output: 
-  html_document:
-    keep_md: true
-    self_contained: true
+  github_document:
     fig_width: 12
     fig_height: 12
     toc: true
@@ -22,6 +20,8 @@ knitr::opts_chunk$set(echo = TRUE, width = 150)
 This repository contains data and scripts for reproducing the analysis of the paper *Are You Sure You're Sure? - Effects of Visual Representation on the Cliff Effect in Statistical Inference* by Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon. 
 
 The raw data for both experiments can be found in folders `experiment1/data/` and `experiment2/data/` respectively, which also contains the R data frames used in the analysis (`exp1_data.rds` and `exp2_data.rds`). The web pages for the surveys are in folder `web`, with some screenshots in folder `screenshots`.
+
+Note: GitHub doesn't render mathematical equations properly, you might want to download and view the actual html-page (`README.html`) instead.
 
 ## One-sample experiment
 
@@ -269,15 +269,12 @@ Stats/ML and VIS/HCI groups tend to give slightly more extreme answers, but diff
 
 For modelling the data and the potential cliff effect we use piece-wise logit-normal model with following pdf:
 
-
 $$
-
 p(x)=\begin{cases}
 \alpha (1 - \gamma), & \text{if $x = 0$},\\
 \alpha \gamma, & \text{if $x = 1$},\\
 (1 - \alpha) \phi(logit(x), \mu, \sigma), & \text{otherwise}.\\
 \end{cases}
-
 $$
 
 Here $\alpha = P(x \in \{0, 1\})$ is the probability of answering one of the extreme values (not at all confident or fully confident), and $\gamma = P(x = 1 \mid x \in \{0, 1\})$, is the conditional probability of full confidence given that the answer is one of the extremes.
