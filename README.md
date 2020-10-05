@@ -6,6 +6,11 @@ output:
   html_document:
     keep_md: true
     self_contained: true
+    fig_width: 12
+    fig_height: 12
+    toc: true
+    toc_depth: 3
+    toc_float: true
 ---
 
 
@@ -166,7 +171,7 @@ data$expertise <- relevel(data$expertise, "Stats/ML")
 
 
 
-Let's fist look at some descriptive statistic:
+Let's first look at some descriptive statistic:
 
 ```r
 ids <- which(!duplicated(data$id))
@@ -416,14 +421,13 @@ Stats/ML and VIS/HCI groups tend to give slightly more extreme answers, but diff
 For modelling the data and the potential cliff effect we use piece-wise logit-normal model with following pdf:
 
 $$
-\begin{equation}
 p(x)=\begin{cases}
 \alpha (1 - \gamma), & \text{if $x = 0$},\\
 \alpha \gamma, & \text{if $x = 1$},\\
 (1 - \alpha) \phi(\logit(x), \mu, \sigma), & \text{otherwise}.\\
 \end{cases}
-\end{equation}
 $$
+
 Here $\alpha = P(x \in \{0, 1\})$ is the probability of answering one of the extreme values (not at all confident or fully confident), and $\gamma = P(x = 1 \mid x \in \{0, 1\})$, is the conditional probability of full confidence given that the answer is one of the extremes.
 
 For $\mu$,$\alpha$,$\gamma$, and $\sigma$, we define following linear predictors:
@@ -870,6 +874,7 @@ pp_check(fit_exp1, type = "stat_grouped", group = "viz", stat = "mean")
 ```
 
 ![](README_files/figure-html/pp_check_exp1_c-1.png)<!-- -->
+
 Noting the scale on the x-axis, our histograms look reasonable given our data, although there are some subgroups where our model is slightly over- or underestimating compared to our data, especially in the violin CI group (reasonable changes to our model, such as dropping some interaction terms, did not improve this). Same posterior checks for average participants (with random effects zeroed out) we get very good results:
 
 
@@ -1062,10 +1067,10 @@ d %>% group_by(viz, iter) %>%
 ## # A tibble: 4 x 5
 ##   viz          mean     sd `2.5%` `97.5`
 ##   <fct>       <dbl>  <dbl>  <dbl>  <dbl>
-## 1 Textual     0.232 0.0253  0.182  0.282
-## 2 Classic CI  0.291 0.0232  0.246  0.338
-## 3 Gradient CI 0.150 0.0242  0.102  0.197
-## 4 Violin CI   0.151 0.0222  0.107  0.195
+## 1 Textual     0.232 0.0254  0.182  0.282
+## 2 Classic CI  0.291 0.0234  0.246  0.338
+## 3 Gradient CI 0.150 0.0243  0.103  0.197
+## 4 Violin CI   0.151 0.0220  0.108  0.195
 ```
 
 Let's also visualize this:
@@ -1134,12 +1139,12 @@ round(t(as.data.frame(postprob)), 2)
 
 ```
 ##                      [,1]
-## P(p > CI)            0.01
+## P(p > CI)            0.02
 ## P(p > gradient)      1.00
 ## P(p > violin)        1.00
 ## P(CI > gradient)     1.00
 ## P(CI > violin)       1.00
-## P(gradient > violin) 0.48
+## P(gradient > violin) 0.49
 ```
 
 ### Results for the model with expertise
@@ -1580,22 +1585,22 @@ d %>% group_by(expertise, viz, iter) %>%
 ## # Groups:   expertise [4]
 ##    expertise                     viz           mean     sd  `2.5%` `97.5`
 ##    <fct>                         <fct>        <dbl>  <dbl>   <dbl>  <dbl>
-##  1 Stats/ML                      Textual     0.305  0.0545  0.196   0.409
-##  2 Stats/ML                      Classic CI  0.413  0.0449  0.323   0.501
-##  3 Stats/ML                      Gradient CI 0.212  0.0519  0.110   0.314
-##  4 Stats/ML                      Violin CI   0.214  0.0461  0.124   0.303
-##  5 VIS/HCI                       Textual     0.213  0.0502  0.116   0.311
-##  6 VIS/HCI                       Classic CI  0.240  0.0409  0.162   0.322
-##  7 VIS/HCI                       Gradient CI 0.0608 0.0417 -0.0214  0.144
-##  8 VIS/HCI                       Violin CI   0.0955 0.0319  0.0346  0.160
-##  9 Social science and humanities Textual     0.235  0.0400  0.158   0.313
-## 10 Social science and humanities Classic CI  0.278  0.0410  0.197   0.359
-## 11 Social science and humanities Gradient CI 0.122  0.0409  0.0410  0.202
+##  1 Stats/ML                      Textual     0.305  0.0547  0.194   0.409
+##  2 Stats/ML                      Classic CI  0.413  0.0450  0.322   0.501
+##  3 Stats/ML                      Gradient CI 0.212  0.0517  0.110   0.313
+##  4 Stats/ML                      Violin CI   0.214  0.0461  0.123   0.304
+##  5 VIS/HCI                       Textual     0.213  0.0501  0.116   0.312
+##  6 VIS/HCI                       Classic CI  0.240  0.0409  0.162   0.321
+##  7 VIS/HCI                       Gradient CI 0.0605 0.0418 -0.0217  0.144
+##  8 VIS/HCI                       Violin CI   0.0955 0.0318  0.0342  0.159
+##  9 Social science and humanities Textual     0.235  0.0401  0.157   0.312
+## 10 Social science and humanities Classic CI  0.277  0.0410  0.198   0.359
+## 11 Social science and humanities Gradient CI 0.123  0.0409  0.0431  0.203
 ## 12 Social science and humanities Violin CI   0.138  0.0422  0.0563  0.222
-## 13 Physical and life sciences    Textual     0.202  0.0449  0.113   0.290
-## 14 Physical and life sciences    Classic CI  0.264  0.0413  0.183   0.344
-## 15 Physical and life sciences    Gradient CI 0.204  0.0405  0.125   0.284
-## 16 Physical and life sciences    Violin CI   0.171  0.0378  0.0969  0.246
+## 13 Physical and life sciences    Textual     0.202  0.0449  0.114   0.291
+## 14 Physical and life sciences    Classic CI  0.264  0.0414  0.183   0.346
+## 15 Physical and life sciences    Gradient CI 0.204  0.0406  0.125   0.286
+## 16 Physical and life sciences    Violin CI   0.171  0.0379  0.0983  0.246
 ```
 
 We see some differences between the group-wise estimates (but note the standard deviation). For example the drop in confidence seems to be smallest in the VIS/HCI group with gradient and violin CIs (and $p$-value and classic CI perform relatively similar) and somewhat surprisingly the drops are largest in the Stats/ML group for all representation values. However, in all groups the classic CI has largest drop, with $p$-value following second (expect there is a virtually tie with the gradient CI in Phys./life sciences group), and relatively equal drops with gradient and violin CIs.
@@ -1624,10 +1629,10 @@ d %>% group_by(expertise, viz, iter) %>%
 ## # A tibble: 4 x 5
 ##   viz          mean     sd  `2.5%` `97.5`
 ##   <fct>       <dbl>  <dbl>   <dbl>  <dbl>
-## 1 Textual     0.239 0.0622 0.128    0.375
+## 1 Textual     0.239 0.0623 0.128    0.375
 ## 2 Classic CI  0.299 0.0796 0.180    0.470
-## 3 Gradient CI 0.150 0.0762 0.00690  0.286
-## 4 Violin CI   0.155 0.0590 0.0507   0.275
+## 3 Gradient CI 0.150 0.0761 0.00751  0.286
+## 4 Violin CI   0.155 0.0590 0.0515   0.274
 ```
 
 Density plots of course show multimodality due to group differences:
@@ -1929,10 +1934,10 @@ d %>% group_by(viz, iter) %>%
 ## # A tibble: 4 x 5
 ##   viz          mean     sd `2.5%` `97.5`
 ##   <fct>       <dbl>  <dbl>  <dbl>  <dbl>
-## 1 Textual     0.260 0.0265  0.209  0.311
-## 2 Classic CI  0.316 0.0246  0.269  0.365
-## 3 Gradient CI 0.166 0.0249  0.117  0.214
-## 4 Violin CI   0.175 0.0227  0.131  0.220
+## 1 Textual     0.260 0.0268  0.208  0.313
+## 2 Classic CI  0.316 0.0247  0.268  0.365
+## 3 Gradient CI 0.166 0.0248  0.117  0.215
+## 4 Violin CI   0.176 0.0230  0.130  0.220
 ```
 
 Overall, the results are in line with the analysis of to full data, except that the average $\delta$ is larger in all groups.
@@ -2882,10 +2887,10 @@ d %>% group_by(viz, iter) %>%
 ## # A tibble: 4 x 5
 ##   viz                mean     sd    `2.5%` `97.5`
 ##   <fct>             <dbl>  <dbl>     <dbl>  <dbl>
-## 1 Classic CI       0.107  0.0337  0.0403   0.174 
-## 2 Gradient CI      0.0390 0.0306 -0.0220   0.100 
-## 3 Cont. violin CI -0.0199 0.0341 -0.0866   0.0482
-## 4 Disc. violin CI  0.0700 0.0359 -0.000180 0.141
+## 1 Classic CI       0.107  0.0336  0.0403   0.173 
+## 2 Gradient CI      0.0390 0.0305 -0.0212   0.100 
+## 3 Cont. violin CI -0.0198 0.0343 -0.0869   0.0475
+## 4 Disc. violin CI  0.0699 0.0358  0.000347 0.141
 ```
 
 There is a peculiar rise in confidence level in case of continuous Violin CI when the underlying $p$-value is 0.05, but overall, compared to the first experiment the results here do not show strong differences in cliff effect or dichotomous thinking, and actually is no clear signs of these phenomena in this experiment:
@@ -3296,22 +3301,22 @@ d %>% group_by(expertise, viz, iter) %>%
 ## # Groups:   expertise [4]
 ##    expertise                     viz                 mean     sd   `2.5%` `97.5`
 ##    <fct>                         <fct>              <dbl>  <dbl>    <dbl>  <dbl>
-##  1 Stats/ML                      Classic CI       0.114   0.0451  0.0258  0.205 
-##  2 Stats/ML                      Gradient CI      0.0348  0.0470 -0.0598  0.127 
-##  3 Stats/ML                      Cont. violin CI -0.00825 0.0605 -0.128   0.111 
-##  4 Stats/ML                      Disc. violin CI  0.0245  0.0567 -0.0865  0.137 
-##  5 VIS/HCI                       Classic CI       0.0697  0.0809 -0.0864  0.230 
-##  6 VIS/HCI                       Gradient CI      0.00573 0.102  -0.165   0.230 
-##  7 VIS/HCI                       Cont. violin CI -0.00512 0.0967 -0.191   0.187 
-##  8 VIS/HCI                       Disc. violin CI  0.117   0.0943 -0.0682  0.303 
-##  9 Social science and humanities Classic CI       0.116   0.0610  0.00303 0.237 
-## 10 Social science and humanities Gradient CI      0.0254  0.0512 -0.0705  0.126 
-## 11 Social science and humanities Cont. violin CI -0.0322  0.0585 -0.149   0.0824
-## 12 Social science and humanities Disc. violin CI  0.0810  0.0649 -0.0477  0.210 
-## 13 Physical and life sciences    Classic CI       0.168   0.124  -0.0686  0.429 
-## 14 Physical and life sciences    Gradient CI      0.155   0.122  -0.0403  0.459 
-## 15 Physical and life sciences    Cont. violin CI -0.0252  0.0958 -0.189   0.181 
-## 16 Physical and life sciences    Disc. violin CI  0.113   0.0902 -0.0378  0.307
+##  1 Stats/ML                      Classic CI       0.114   0.0451  0.0261  0.203 
+##  2 Stats/ML                      Gradient CI      0.0347  0.0470 -0.0598  0.127 
+##  3 Stats/ML                      Cont. violin CI -0.00827 0.0607 -0.127   0.113 
+##  4 Stats/ML                      Disc. violin CI  0.0244  0.0566 -0.0858  0.137 
+##  5 VIS/HCI                       Classic CI       0.0697  0.0809 -0.0852  0.229 
+##  6 VIS/HCI                       Gradient CI      0.00578 0.102  -0.165   0.230 
+##  7 VIS/HCI                       Cont. violin CI -0.00502 0.0968 -0.191   0.189 
+##  8 VIS/HCI                       Disc. violin CI  0.117   0.0943 -0.0680  0.303 
+##  9 Social science and humanities Classic CI       0.116   0.0611  0.00253 0.237 
+## 10 Social science and humanities Gradient CI      0.0254  0.0512 -0.0704  0.127 
+## 11 Social science and humanities Cont. violin CI -0.0321  0.0586 -0.151   0.0828
+## 12 Social science and humanities Disc. violin CI  0.0809  0.0650 -0.0490  0.208 
+## 13 Physical and life sciences    Classic CI       0.168   0.124  -0.0683  0.429 
+## 14 Physical and life sciences    Gradient CI      0.155   0.122  -0.0416  0.458 
+## 15 Physical and life sciences    Cont. violin CI -0.0253  0.0957 -0.188   0.180 
+## 16 Physical and life sciences    Disc. violin CI  0.113   0.0902 -0.0390  0.307
 ```
 
 As with the model without expertise, we see no clear signs of cliff effect here.
@@ -3487,12 +3492,12 @@ d %>% group_by(viz, iter) %>%
 
 ```
 ## # A tibble: 4 x 5
-##   viz                mean     sd   `2.5%` `97.5`
-##   <fct>             <dbl>  <dbl>    <dbl>  <dbl>
-## 1 Classic CI       0.125  0.0349  0.0555  0.194 
-## 2 Gradient CI      0.0525 0.0315 -0.00810 0.114 
-## 3 Cont. violin CI -0.0153 0.0347 -0.0825  0.0531
-## 4 Disc. violin CI  0.0693 0.0373 -0.00107 0.143
+##   viz                mean     sd    `2.5%` `97.5`
+##   <fct>             <dbl>  <dbl>     <dbl>  <dbl>
+## 1 Classic CI       0.125  0.0348  0.0565   0.193 
+## 2 Gradient CI      0.0527 0.0314 -0.00831  0.114 
+## 3 Cont. violin CI -0.0152 0.0347 -0.0834   0.0522
+## 4 Disc. violin CI  0.0692 0.0370 -0.000345 0.143
 ```
 
 Overall, the results are very similar to the analysis with the full data.

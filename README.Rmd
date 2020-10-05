@@ -6,6 +6,11 @@ output:
   html_document:
     keep_md: true
     self_contained: true
+    fig_width: 12
+    fig_height: 12
+    toc: true
+    toc_depth: 3
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -168,7 +173,7 @@ data$expertise <- relevel(data$expertise, "Stats/ML")
 data <- readRDS("experiment1/data/exp1_data.rds")
 ```
 
-Let's fist look at some descriptive statistic:
+Let's first look at some descriptive statistic:
 ```{r, cache = TRUE}
 ids <- which(!duplicated(data$id))
 barplot(table(data$expertise[ids]))
@@ -266,14 +271,13 @@ Stats/ML and VIS/HCI groups tend to give slightly more extreme answers, but diff
 For modelling the data and the potential cliff effect we use piece-wise logit-normal model with following pdf:
 
 $$
-\begin{equation}
 p(x)=\begin{cases}
 \alpha (1 - \gamma), & \text{if $x = 0$},\\
 \alpha \gamma, & \text{if $x = 1$},\\
 (1 - \alpha) \phi(\logit(x), \mu, \sigma), & \text{otherwise}.\\
 \end{cases}
-\end{equation}
 $$
+
 Here $\alpha = P(x \in \{0, 1\})$ is the probability of answering one of the extreme values (not at all confident or fully confident), and $\gamma = P(x = 1 \mid x \in \{0, 1\})$, is the conditional probability of full confidence given that the answer is one of the extremes.
 
 For $\mu$,$\alpha$,$\gamma$, and $\sigma$, we define following linear predictors:
@@ -437,6 +441,7 @@ Now grouping based on visualization:
 ```{r pp_check_exp1_c, cache = TRUE}
 pp_check(fit_exp1, type = "stat_grouped", group = "viz", stat = "mean")
 ```
+
 Noting the scale on the x-axis, our histograms look reasonable given our data, although there are some subgroups where our model is slightly over- or underestimating compared to our data, especially in the violin CI group (reasonable changes to our model, such as dropping some interaction terms, did not improve this). Same posterior checks for average participants (with random effects zeroed out) we get very good results:
 
 ```{r pp_check_exp1_b_norandom, cache = TRUE}
