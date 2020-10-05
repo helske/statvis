@@ -10,7 +10,6 @@ output:
     fig_height: 12
     toc: true
     toc_depth: 3
-    toc_float: true
 ---
 
 
@@ -420,12 +419,15 @@ Stats/ML and VIS/HCI groups tend to give slightly more extreme answers, but diff
 
 For modelling the data and the potential cliff effect we use piece-wise logit-normal model with following pdf:
 
+
 $$
+
 p(x)=\begin{cases}
 \alpha (1 - \gamma), & \text{if $x = 0$},\\
 \alpha \gamma, & \text{if $x = 1$},\\
-(1 - \alpha) \phi(\logit(x), \mu, \sigma), & \text{otherwise}.\\
+(1 - \alpha) \phi(logit(x), \mu, \sigma), & \text{otherwise}.\\
 \end{cases}
+
 $$
 
 Here $\alpha = P(x \in \{0, 1\})$ is the probability of answering one of the extreme values (not at all confident or fully confident), and $\gamma = P(x = 1 \mid x \in \{0, 1\})$, is the conditional probability of full confidence given that the answer is one of the extremes.
