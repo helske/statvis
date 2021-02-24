@@ -32,8 +32,8 @@ Besançon
 # What is this
 
 This repository contains data and scripts for reproducing the analysis
-of the paper *Are You Sure You’re Sure? - Effects of Visual
-Representation on the Cliff Effect in Statistical Inference* by Jouni
+of the paper [*Are You Sure You’re Sure? - Effects of Visual
+Representation on the Cliff Effect in Statistical Inference*](https://arxiv.org/abs/2002.07671) by Jouni
 Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni
 Besançon.
 
