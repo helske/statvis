@@ -1,0 +1,9 @@
+Paper title: Can visualization alleviate dichotomous thinking? Effects of visual representations on the cliff effect
+
+Authors: Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, Lonni Besançon
+
+Operating System: Windows 10, Linux, or Mac
+
+System requirements: 
+
+R (https://www.r-project.org/), C++ compiler or Rtools for Windows (https://cran.r-project.org/bin/windows/Rtools/) for compiling custom Stan models. In addition, R packages "brms", "modelr", "ggplot2", "dplyr" and their dependencies are needed.
