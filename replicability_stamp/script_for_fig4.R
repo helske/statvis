@@ -92,8 +92,8 @@ logit_p_gaussian <- custom_family(
 
 # Read the data and add some variables
 
-# Data can be found at the Github repo
-data <- readRDS("experiment1/data/exp1_data.rds")
+# Data can be found at the Github repo in the same path as this script
+data <- readRDS("exp1_data.rds")
 
 data <- data %>% 
   mutate(

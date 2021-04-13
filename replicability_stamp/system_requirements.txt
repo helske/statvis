@@ -6,4 +6,12 @@ Operating System: Windows 10, Linux, or Mac
 
 System requirements: 
 
-R (https://www.r-project.org/), C++ compiler or Rtools for Windows (https://cran.r-project.org/bin/windows/Rtools/) for compiling custom Stan models. In addition, R packages "brms", "modelr", "ggplot2", "dplyr" and their dependencies are needed.
+R (https://www.r-project.org/), C++ compiler or Rtools for Windows (https://cran.r-project.org/bin/windows/Rtools/) for compiling custom Stan models. For Mac, Xcode is apparently needed, but this is not tested. In addition, R packages "brms", "modelr", "ggplot2", "dplyr" and their dependencies are needed and automatically installed by the script "script_for_fig4.R".
+
+Instructions:
+
+Install R from https://www.r-project.org/, depending on the operating system. Follow instructions in https://github.com/stan-dev/rstan/wiki/RStan-Getting-Started to Install necessary C++ toolchain for Stan/brms.
+
+After this, run script in "script_for_fig4.R" to create Figure 4 of the paper.
+
+
