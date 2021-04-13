@@ -1,50 +1,49 @@
-Are You Sure You’re Sure? - Effects of Visual Representation on the
-Cliff Effect in Statistical Inference
+Can visualization alleviate dichotomous thinking? Effects of visual
+representations on the cliff effect
 ================
 Jouni Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, Lonni
 Besançon
-3/10/2020
+13/4/2020
 
-  - [What is this](#what-is-this)
-      - [One-sample experiment](#one-sample-experiment)
-          - [Creating the dataset](#creating-the-dataset)
-          - [Descriptive statistics](#descriptive-statistics)
-          - [Model](#model)
-          - [Results](#results)
-          - [Results for the model with
+-   [What is this](#what-is-this)
+    -   [One-sample experiment](#one-sample-experiment)
+        -   [Creating the dataset](#creating-the-dataset)
+        -   [Descriptive statistics](#descriptive-statistics)
+        -   [Model](#model)
+        -   [Results](#results)
+        -   [Results for the model with
             expertise](#results-for-the-model-with-expertise)
-          - [Reanalysis with cleaned
+        -   [Reanalysis with cleaned
             data](#reanalysis-with-cleaned-data)
-          - [Subjective rankings of the representation
+        -   [Subjective rankings of the representation
             styles](#subjective-rankings-of-the-representation-styles)
-      - [Two-sample experiment](#two-sample-experiment)
-          - [Creating the dataset](#creating-the-dataset-1)
-          - [Descriptive statistics](#descriptive-statistics-1)
-          - [Model](#model-1)
-          - [Results](#results-1)
-          - [Results for the model with
+    -   [Two-sample experiment](#two-sample-experiment)
+        -   [Creating the dataset](#creating-the-dataset-1)
+        -   [Descriptive statistics](#descriptive-statistics-1)
+        -   [Model](#model-1)
+        -   [Results](#results-1)
+        -   [Results for the model with
             expertise](#results-for-the-model-with-expertise-1)
-          - [Reanalysis with cleaned
+        -   [Reanalysis with cleaned
             data](#reanalysis-with-cleaned-data-1)
-          - [Subjective rankings for second
+        -   [Subjective rankings for second
             experiment](#subjective-rankings-for-second-experiment)
 
 # What is this
 
 This repository contains data and scripts for reproducing the analysis
-of the paper [*Are You Sure You’re Sure? - Effects of Visual
-Representation on the Cliff Effect in Statistical Inference*](https://arxiv.org/abs/2002.07671) by Jouni
-Helske, Satu Helske, Matthew Cooper, Anders Ynnerman, and Lonni
-Besançon.
+of the paper *Can visualization alleviate dichotomous thinking? Effects
+of visual representations on the cliff effect* by Jouni Helske, Satu
+Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon.
+
+This Rmd file contains full scripts (and extra stuff) to reproduce
+figures in the paper.
 
 The raw data for both experiments can be found in folders
 `experiment1/data/` and `experiment2/data/` respectively, which also
 contains the R data frames used in the analysis (`exp1_data.rds` and
 `exp2_data.rds`). The web pages for the surveys are in folder `web`,
 with some screenshots in folder `screenshots`.
-
-Note: GitHub doesn’t render mathematical equations properly, you might
-want to download and view the actual html-page (`README.html`) instead.
 
 ## One-sample experiment
 
@@ -63,6 +62,20 @@ suppressPackageStartupMessages({
   library(ggthemes)
 })
 ```
+
+    ## Warning: package 'brms' was built under R version 4.0.3
+
+    ## Warning: package 'Rcpp' was built under R version 4.0.3
+
+    ## Warning: package 'ggplot2' was built under R version 4.0.3
+
+    ## Warning: package 'dplyr' was built under R version 4.0.4
+
+    ## Warning: package 'jsonlite' was built under R version 4.0.3
+
+    ## Warning: package 'loo' was built under R version 4.0.3
+
+    ## Warning: package 'ggthemes' was built under R version 4.0.3
 
 Then we transform the raw data to suitable format for analysis:
 
@@ -213,7 +226,7 @@ hist(as.numeric(data$age[ids]))
 ![](README_files/figure-gfm/unnamed-chunk-2-3.png)<!-- -->
 
 Let us now focus on the cliff effect as difference between confidence
-when \(p\)-value=0.04 versus \(p\)-value=0.06:
+when *p*-value=0.04 versus *p*-value=0.06:
 
 ``` r
 data %>% group_by(id, viz) %>% 
@@ -256,7 +269,7 @@ data %>% group_by(id, viz) %>%
 ![](README_files/figure-gfm/cliff_effect_exp1-1.png)<!-- -->
 
 The cliff effect seems to be largest when information is presented as
-traditional CI or \(p\)-value which behave similarly. Gradient CI and
+traditional CI or *p*-value which behave similarly. Gradient CI and
 Violin CI plots are pretty close to each other.
 
 Now same but with subgrouping using sample size:
@@ -420,45 +433,44 @@ but differences are quite small.
 For modelling the data and the potential cliff effect we use piece-wise
 logit-normal model with following pdf:
 
-\[
-p(x)=\begin{cases}
-\alpha (1 - \gamma), & \text{if $x = 0$},\\
-\alpha \gamma, & \text{if $x = 1$},\\
-(1 - \alpha) \phi(logit(x), \mu, \sigma), & \text{otherwise}.\\
-\end{cases}
-\]
+$$
+p(x)=\\begin{cases}
+\\alpha (1 - \\gamma), & \\text{if $x = 0$},\\\\
+\\alpha \\gamma, & \\text{if $x = 1$},\\\\
+(1 - \\alpha) \\phi(logit(x), \\mu, \\sigma), & \\text{otherwise}.\\\\
+\\end{cases}
+$$
 
-Here \(\alpha = P(x \in \{0, 1\})\) is the probability of answering one
-of the extreme values (not at all confident or fully confident), and
-\(\gamma = P(x = 1 \mid x \in \{0, 1\})\), is the conditional
-probability of full confidence given that the answer is one of the
-extremes.
+Here *α* = *P*(*x* ∈ {0, 1}) is the probability of answering one of the
+extreme values (not at all confident or fully confident), and
+*γ* = *P*(*x* = 1 ∣ *x* ∈ {0, 1}), is the conditional probability of
+full confidence given that the answer is one of the extremes.
 
-For \(\mu\),\(\alpha\),\(\gamma\), and \(\sigma\), we define following
-linear predictors:
+For *μ*,*α*,*γ*, and *σ*, we define following linear predictors:
 
-\[
-\begin{align}
-\begin{split}
-\mu        &\sim viz \cdot I(p < 0.05) \cdot logit(p) + 
-viz \cdot I(p = 0.05) \\ 
-& + (viz + I(p < 0.05) \cdot logit(p) + I(p = 0.05) \mid id),\\
-\alpha     &\sim  p \cdot viz + (1 \mid id),\\
-\gamma     &\sim mo(p),\\
-\sigma     &\sim viz + (1 \mid id),
-\end{split}
-\end{align}
-\] where \(p\) is a categorical variable defining the true \(p\)-value,
-logit(\(p\)) is a continuous variable of the logit-transformed
-\(p\)-value, \(mo(p)\) denotes a monotonic effect of the \(p\)-value,
-the dot corresponds to interaction (\(I(p = 0.05) \cdot viz\)  both the
-main and two-way interaction terms) and \((z \mid id)\) denotes
-participant-level random effect for variable \(z\). As priors we used
-the relatively uninformative defaults of the  package.
+$$
+\\begin{align}
+\\begin{split}
+\\mu        &\\sim viz \\cdot I(p &lt; 0.05) \\cdot logit(p) + 
+viz \\cdot I(p = 0.05) \\\\ 
+& + (viz + I(p &lt; 0.05) \\cdot logit(p) + I(p = 0.05) \\mid id),\\\\
+\\alpha     &\\sim  p \\cdot viz + (1 \\mid id),\\\\
+\\gamma     &\\sim mo(p),\\\\
+\\sigma     &\\sim viz + (1 \\mid id),
+\\end{split}
+\\end{align}
+$$
+where *p* is a categorical variable defining the true *p*-value,
+logit(*p*) is a continuous variable of the logit-transformed *p*-value,
+*m**o*(*p*) denotes a monotonic effect of the *p*-value, the dot
+corresponds to interaction (*I*(*p* = 0.05) ⋅ *v**i**z* both the main
+and two-way interaction terms) and (*z* ∣ *i**d*) denotes
+participant-level random effect for variable *z*. As priors we used the
+relatively uninformative defaults of the package.
 
 Now in a presence of a cliff effect we should observe a discontinuity in
 an otherwise linear relationship (in logit-logit scale) between the true
-\(p\)-value and participants’ confidence.
+*p*-value and participants’ confidence.
 
 We also tested submodels of this model (omitting some of the
 interactions or random effects), and all of these models gave very
@@ -855,7 +867,7 @@ pp_check(fit_exp1, type = "hist", nsamples = 11)
 We see that the histograms of the replicated datasets are similar to
 observed one, perhaps slight exaggeration of the tails. Next, we look
 the median confidence of replicated datasets grouped with underlying
-\(p\)-value:
+*p*-value:
 
 ``` r
 pp_check(fit_exp1, type = "stat_grouped", group = "true_p", stat = "median")
@@ -907,7 +919,7 @@ pp_check(fit_exp1, type = "stat_grouped", group = "viz", stat = "mean", re_formu
 ![](README_files/figure-gfm/pp_check_exp1_b_norandom-2.png)<!-- -->
 
 Now we are ready to analyze the results. First, the posterior curves of
-the confidence given the underlying \(p\)-value:
+the confidence given the underlying *p*-value:
 
 ``` r
 comb_exp1 <- fit_exp1$data %>% 
@@ -1008,18 +1020,18 @@ p
 
 The confidence level with traditional CI is most constant of all
 techniques when are within “statistically significant region”
-i.e. \(p<0.05\), but there is a large drop when moving to \(p>0.05\),
-even larger than with textual information with \(p\)-value, which
-behaves nearly identically with the Violin CI plot until \(p=0.05\),
-when the confidence in \(p\)-value representation drops below all other
-techniques. The Gradient CI plot and Violin CI plot behave similarly,
-except the confidence level in case of Gradient CI plot is constantly
-below the Violin CI plot.
+i.e. *p* &lt; 0.05, but there is a large drop when moving to
+*p* &gt; 0.05, even larger than with textual information with *p*-value,
+which behaves nearly identically with the Violin CI plot until
+*p* = 0.05, when the confidence in *p*-value representation drops below
+all other techniques. The Gradient CI plot and Violin CI plot behave
+similarly, except the confidence level in case of Gradient CI plot is
+constantly below the Violin CI plot.
 
 The probability curves of extreme answer show that traditional CI
-produces more easily extreme answers when \(p<0.05\) (so the extreme
-answer is likely of full confidence), whereas \(p\)-value is more likely
-to lead extreme answer (zero confidence) when \(p>0.05\). Differences
+produces more easily extreme answers when *p* &lt; 0.05 (so the extreme
+answer is likely of full confidence), whereas *p*-value is more likely
+to lead extreme answer (zero confidence) when *p* &gt; 0.05. Differences
 between techniques seem nevertheless quite small compared to overall
 variation in the estimates.
 
@@ -1056,7 +1068,7 @@ p
 ![](README_files/figure-gfm/extreme_exp1_plot-1.png)<!-- -->
 
 Finally, we can compute the average drop in perceived confidence when
-moving from \(p = 0.04\) to \(p=0.06\):
+moving from *p* = 0.04 to *p* = 0.06:
 
 ``` r
 d %>% group_by(viz, iter) %>% 
@@ -1109,7 +1121,7 @@ p
 
 Note that the cliff effect between viz styles are not independent,
 i.e. if there is a large cliff effect with Violin CI then the cliff
-effect with \(p\)-value is likely larger as well. This can be seen from
+effect with *p*-value is likely larger as well. This can be seen from
 the posterior probabilities that cliff effect is larger with viz 1 (row
 variable) than with viz 2 (column variable):
 
@@ -1600,10 +1612,10 @@ d %>% group_by(expertise, viz, iter) %>%
 We see some differences between the group-wise estimates (but note the
 standard deviation). For example the drop in confidence seems to be
 smallest in the VIS/HCI group with gradient and violin CIs (and
-\(p\)-value and classic CI perform relatively similar) and somewhat
+*p*-value and classic CI perform relatively similar) and somewhat
 surprisingly the drops are largest in the Stats/ML group for all
 representation values. However, in all groups the classic CI has largest
-drop, with \(p\)-value following second (expect there is a virtually tie
+drop, with *p*-value following second (expect there is a virtually tie
 with the gradient CI in Phys./life sciences group), and relatively equal
 drops with gradient and violin CIs.
 
@@ -1664,7 +1676,7 @@ When reflecting these results to the descriptive statistics of the data,
 especially the cliff effect for each expertise group and visualization
 style, it should be noted that especially in VIS/HCI case there are
 large proportion of answers with a clear “negative drop” of confidence
-around \(p=0.05\), which could be considered “equally wrong
+around *p* = 0.05, which could be considered “equally wrong
 interpretation” as the cliff effect itself. These cases also negate the
 big changes to other direction making the overall drop for these groups
 smaller.
@@ -1672,8 +1684,8 @@ smaller.
 <!-- Thus it could be interesting to study absolute changes of confidence, or alternatively clean these "outliers" (most of them are not really outliers as due to the experiment's design there is natural random variation in the answers) and reanalyse the data (which we did not do here as we wanted to stary true to our preregistration where we did not consider this). -->
 
 For example, here is the proportion of curves where the the change in
-confidence \(\delta < -0.2\) (average drop over all viz and expertise
-groups was estimated as \(0.2\):
+confidence *δ* &lt;  − 0.2 (average drop over all viz and expertise
+groups was estimated as 0.2:
 
 ``` r
 data %>% group_by(id, viz, expertise) %>% 
@@ -1751,14 +1763,14 @@ data %>% group_by(id, viz, expertise) %>%
 
 Finally we test how does the results depend on those confidence curves
 which have clearly positive slope or large increases in confidence when
-\(p\)-value increases.
+*p*-value increases.
 
-We use simple linear model with logit-transformed \(p\)-value and
-trimmed logit-transformed confidence, and check whether the
-corresponding coefficient is clearly positive (arbitrarily chose as
-0.1), and in addition to this we remove those curves where the
-difference between two consecutive confidence values are larger than 0.2
-(this should of course be negative):
+We use simple linear model with logit-transformed *p*-value and trimmed
+logit-transformed confidence, and check whether the corresponding
+coefficient is clearly positive (arbitrarily chose as 0.1), and in
+addition to this we remove those curves where the difference between two
+consecutive confidence values are larger than 0.2 (this should of course
+be negative):
 
 ``` r
 data <- readRDS("experiment1/data/exp1_data.rds")
@@ -1921,7 +1933,7 @@ d %>% group_by(viz, iter) %>%
     ## 4 Violin CI   0.175 0.0230  0.130  0.221
 
 Overall, the results are in line with the analysis of to full data,
-except that the average \(\delta\) is larger in all groups.
+except that the average *δ* is larger in all groups.
 
 ### Subjective rankings of the representation styles
 
@@ -1993,7 +2005,7 @@ p
 
 ![](README_files/figure-gfm/rank_exp1_plot-1.png)<!-- -->
 
-We see that the \(p\)-values are likely to be ranked very low, while
+We see that the *p*-values are likely to be ranked very low, while
 violin CI and classic CI are the most preferred options, and gradient CI
 seems to divide opinions most.
 
@@ -2103,7 +2115,7 @@ hist(as.numeric(data2$age[ids]))
 ![](README_files/figure-gfm/desc2-3.png)<!-- -->
 
 Again we now focus on the cliff effect as difference between confidence
-when \(p\)-value=0.04 versus \(p\)-value=0.06:
+when *p*-value=0.04 versus *p*-value=0.06:
 
 ``` r
 data2 %>% group_by(id, viz) %>% 
@@ -2686,7 +2698,7 @@ posterior predictive samples are nicely in line with the data (it is
 feasible that the data could have been generated by this model).
 
 Now we are ready to analyze the results. First, the posterior curves of
-the confidence given the underlying \(p\)-value:
+the confidence given the underlying *p*-value:
 
 ``` r
 comb_exp2 <- fit_exp2$data %>% 
@@ -2819,7 +2831,7 @@ p
 ![](README_files/figure-gfm/extreme_exp2_plot-1.png)<!-- -->
 
 Again we can compute the average drop in perceived confidence when
-moving from \(p = 0.04\) to \(p=0.06\):
+moving from *p* = 0.04 to *p* = 0.06:
 
 ``` r
 d %>% group_by(viz, iter) %>% 
@@ -2842,7 +2854,7 @@ d %>% group_by(viz, iter) %>%
     ## 4 Disc. violin CI  0.0698 0.0358  0.000260 0.141
 
 There is a peculiar rise in confidence level in case of continuous
-Violin CI when the underlying \(p\)-value is 0.05, but overall, compared
+Violin CI when the underlying *p*-value is 0.05, but overall, compared
 to the first experiment the results here do not show strong differences
 in cliff effect or dichotomous thinking, and actually is no clear signs
 of these phenomena in this experiment:
@@ -3258,14 +3270,14 @@ effect here.
 
 Finally we again test how does the results depend on those confidence
 curves which have clearly positive slope or large increases in
-confidence when \(p\)-value increases.
+confidence when *p*-value increases.
 
-We use simple linear model with logit-transformed \(p\)-value and
-trimmed logit-transformed confidence, and check whether the
-corresponding coefficient is clearly positive (arbitrarily chose as
-0.1), and in addition to this we remove those curves where the
-difference between two consecutive confidence values are larger than 0.2
-(this should of course be negative):
+We use simple linear model with logit-transformed *p*-value and trimmed
+logit-transformed confidence, and check whether the corresponding
+coefficient is clearly positive (arbitrarily chose as 0.1), and in
+addition to this we remove those curves where the difference between two
+consecutive confidence values are larger than 0.2 (this should of course
+be negative):
 
 ``` r
 data <- readRDS("experiment2/data/exp2_data.rds")
