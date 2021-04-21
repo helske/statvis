@@ -32,8 +32,8 @@ Besançon
 # What is this
 
 This repository contains data and scripts for reproducing the analysis
-of the paper *Can visualization alleviate dichotomous thinking? Effects
-of visual representations on the cliff effect* by Jouni Helske, Satu
+of the paper [*Can visualization alleviate dichotomous thinking? Effects
+of visual representations on the cliff effect*](https://arxiv.org/abs/2002.07671) by Jouni Helske, Satu
 Helske, Matthew Cooper, Anders Ynnerman, and Lonni Besançon.
 
 This Rmd file contains full scripts (and extra stuff) to reproduce
